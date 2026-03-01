@@ -80,7 +80,7 @@ const app = (() => {
         }
 
         // Hide nav on sub-screens
-        const navHidden = ['login','signup','onboarding-1','onboarding-2','onboarding-3',
+        const navHidden = ['login','signup','verify-email','onboarding-1','onboarding-2','onboarding-3',
                            'splash-screen','group-details','receipt-storage','reports'];
         const nav = document.querySelector('.bottom-nav');
         if (nav) nav.style.display = navHidden.includes(screenId) ? 'none' : '';
@@ -300,6 +300,10 @@ const app = (() => {
             if (result?.success) {
                 showToast('Welcome back! 👋', 'success');
                 await postLogin(result.user);
+            } else if (result?.needsVerification) {
+                sessionStorage.setItem('verify_email', result.email || email);
+                showToast('Please verify your email first 📧', 'info');
+                navigateTo('verify-email');
             } else {
                 showToast(result?.message || 'Invalid email or password', 'error');
                 const form = document.getElementById('login-password');
@@ -325,7 +329,12 @@ const app = (() => {
         if (btn) { btn.disabled = true; btn.textContent = 'Creating account…'; }
         try {
             const result = await AuthService.signup(name, email, password);
-            if (result?.success) {
+            if (result?.needsVerification) {
+                // Store email for the verify screen
+                sessionStorage.setItem('verify_email', result.email || email);
+                showToast('Check your email for a 6-digit code! 📧', 'success');
+                navigateTo('verify-email');
+            } else if (result?.success) {
                 showToast(`Welcome, ${name}! 🎉`, 'success');
                 await postLogin(result.user);
             } else {
@@ -333,6 +342,44 @@ const app = (() => {
             }
         } finally {
             if (btn) { btn.disabled = false; btn.textContent = 'Create Account'; }
+        }
+    }
+
+    async function handleVerifyEmail(e) {
+        e.preventDefault();
+        const email = sessionStorage.getItem('verify_email') || document.getElementById('verify-email-display')?.dataset.email || '';
+        const code  = document.getElementById('verify-code').value.trim();
+        if (!code || code.length !== 6) {
+            showToast('Enter the 6-digit code from your email', 'error');
+            return;
+        }
+        const btn = e.target.querySelector('[type=submit]');
+        if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+        try {
+            const res = await ApiService.verifyEmail(email, code);
+            if (res?.token) {
+                // Save the verified user
+                AuthService.currentUser = res.user;
+                StorageService.saveUser(res.user);
+                sessionStorage.removeItem('verify_email');
+                showToast(`Email verified! Welcome, ${res.user.name}! ✅`, 'success');
+                await postLogin(res.user);
+            }
+        } catch (err) {
+            showToast(err.message || 'Invalid or expired code', 'error');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Verify Email'; }
+        }
+    }
+
+    async function handleResendCode() {
+        const email = sessionStorage.getItem('verify_email');
+        if (!email) return;
+        try {
+            await ApiService.resendVerification(email);
+            showToast('New code sent! Check your email 📧', 'success');
+        } catch (err) {
+            showToast(err.message || 'Could not resend code', 'error');
         }
     }
 
@@ -1370,10 +1417,16 @@ const app = (() => {
        SCREEN-SPECIFIC RENDER HOOKS
     ════════════════════════════════════════════════ */
     function onNavigate(screenId) {
+        if (screenId === 'verify-email') {
+            const email = sessionStorage.getItem('verify_email') || '';
+            const el = document.getElementById('verify-email-display');
+            if (el) el.textContent = email;
+            document.getElementById('verify-code')?.focus();
+        }
         if (screenId === 'dashboard')       renderDashboard();
         if (screenId === 'groups')          renderGroups();
         if (screenId === 'notifications')   renderNotifications();
-        if (screenId === 'receipt-storage') renderReceipts();   // FIX: was missing
+        if (screenId === 'receipt-storage') renderReceipts();
     }
 
     /* ════════════════════════════════════════════════
@@ -1420,7 +1473,7 @@ const app = (() => {
         toggleTheme, setCurrency, toggleEmailAlerts, areEmailAlertsOn,
 
         // Auth
-        handleLogin, handleSignup, handleGoogleLogin, handleLogout, handleEditProfile,
+        handleLogin, handleSignup, handleVerifyEmail, handleResendCode, handleGoogleLogin, handleLogout, handleEditProfile,
 
         // Expenses
         handleAddExpense, handleCategoryChange,

@@ -34,8 +34,10 @@ const AuthService = {
             this.currentUser = res.user;
             StorageService.saveUser(this.currentUser);
             return { success: true, user: this.currentUser };
-        } catch (apiErr) {
-            console.warn('[Auth] API login failed, using local fallback:', apiErr.message);
+        } catch (apiErr) {            // Backend rejected because email is not verified
+            if (apiErr.message?.toLowerCase().includes('verify')) {
+                return { success: false, needsVerification: true, email, message: apiErr.message };
+            }            console.warn('[Auth] API login failed, using local fallback:', apiErr.message);
         }
 
         // ── Local fallback ──────────────────────────────────────

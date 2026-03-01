@@ -10,6 +10,11 @@ const UserSchema = new mongoose.Schema(
         email:    { type: String, required: [true, 'Email is required'], unique: true, lowercase: true, trim: true },
         password: { type: String, required: [true, 'Password is required'], minlength: 6, select: false },
         avatar:   { type: String, default: '' },
+
+        // Email verification
+        isVerified:          { type: Boolean, default: false },
+        verificationToken:   { type: String, default: null, select: false },
+        verificationExpires: { type: Date,   default: null, select: false },
     },
     { timestamps: true }
 );

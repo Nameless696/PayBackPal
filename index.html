@@ -186,8 +186,47 @@
         </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════
-         DASHBOARD
+    <!-- ═══════════════════════════════════════════         VERIFY EMAIL
+    ═════════════════════════════════════════════ -->
+    <div id="verify-email" class="screen">
+        <div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--bg-body);">
+            <div style="background:var(--gradient-hero);padding:56px 24px 40px;border-radius:0 0 32px 32px;margin-bottom:24px;">
+                <button class="btn-icon" style="background:rgba(255,255,255,0.2);color:#fff;margin-bottom:16px;border:none;" onclick="app.navigateTo('signup')">&#8592;</button>
+                <h1 style="color:#fff;font-size:28px;margin-bottom:4px;">Verify Email</h1>
+                <p style="color:rgba(255,255,255,0.72);font-size:14px;">Enter the 6-digit code sent to your email</p>
+            </div>
+            <div class="container" style="padding-top:0;flex:1;">
+                <div style="text-align:center;margin-bottom:28px;">
+                    <div style="font-size:56px;margin-bottom:12px;">&#128231;</div>
+                    <p style="color:var(--text-secondary);font-size:14px;">We sent a verification code to<br>
+                        <strong id="verify-email-display" style="color:var(--text-primary);"></strong>
+                    </p>
+                </div>
+                <form onsubmit="app.handleVerifyEmail(event)" novalidate>
+                    <div class="input-group">
+                        <label class="input-label">Verification Code</label>
+                        <div class="input-icon-wrap">
+                            <span class="input-icon">&#128274;</span>
+                            <input type="text" class="input" id="verify-code"
+                                placeholder="123456"
+                                maxlength="6"
+                                inputmode="numeric"
+                                pattern="[0-9]{6}"
+                                autocomplete="one-time-code"
+                                style="letter-spacing:8px;font-size:24px;font-weight:700;text-align:center;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full ripple mb-16">Verify Email</button>
+                </form>
+                <p class="text-center" style="font-size:14px;color:var(--text-secondary);">
+                    Didn't receive it?
+                    <button class="link" onclick="app.handleResendCode()">Resend code</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═════════════════════════════════════════════         DASHBOARD
     ═══════════════════════════════════════════ -->
     <div id="dashboard" class="screen with-nav">
 

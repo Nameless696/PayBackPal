@@ -30,9 +30,18 @@ const ApiService = {
     },
 
     async signup(name, email, password) {
-        const res = await this._post('/auth/register', { name, email, password });
-        this.token = res.token;
+        // Returns { needsVerification, email, message } — no token yet
+        return this._post('/auth/register', { name, email, password });
+    },
+
+    async verifyEmail(email, code) {
+        const res = await this._post('/auth/verify', { email, code });
+        if (res.token) this.token = res.token;
         return res;
+    },
+
+    async resendVerification(email) {
+        return this._post('/auth/resend-verification', { email });
     },
 
     async logout() {
