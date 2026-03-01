@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6C63FF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="PayBackPal — Split Expenses, Stay Friends">
+    <title>PayBackPal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="mobile-container">
+
+    <!-- ═══════════════════════════════════════════
+         SPLASH
+    ═══════════════════════════════════════════ -->
+    <div id="splash-screen" class="screen active">
+        <div class="splash-screen">
+            <div class="splash-blob-1"></div>
+            <div class="splash-blob-2"></div>
+            <div class="splash-logo animate-bounce-logo">💸</div>
+            <div class="splash-title">PayBackPal</div>
+            <p class="splash-subtitle">Split Expenses,<br>Stay Friends</p>
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         ONBOARDING 1
+    ═══════════════════════════════════════════ -->
+    <div id="onboarding-1" class="screen">
+        <div style="min-height:100dvh;display:flex;flex-direction:column;">
+            <div style="background:var(--gradient-hero);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 32px 48px;position:relative;overflow:hidden;">
+                <div style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.08);"></div>
+                <div style="font-size:90px;margin-bottom:24px;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.15));">🤝</div>
+                <h2 style="color:#fff;font-size:26px;font-weight:800;text-align:center;margin-bottom:10px;letter-spacing:-0.02em;">Split Any Expense</h2>
+                <p style="color:rgba(255,255,255,0.75);text-align:center;font-size:15px;max-width:240px;line-height:1.55;">Add expenses and split them fairly with your group. No more awkward conversations.</p>
+            </div>
+            <div style="background:var(--bg-card);padding:32px 24px 40px;border-radius:28px 28px 0 0;margin-top:-24px;">
+                <div class="onboarding-dots mb-24">
+                    <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+                </div>
+                <button class="btn btn-primary btn-full ripple mb-12" onclick="app.navigateTo('onboarding-2')">Next →</button>
+                <button class="btn btn-ghost btn-full" onclick="app.navigateTo('login')">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         ONBOARDING 2
+    ═══════════════════════════════════════════ -->
+    <div id="onboarding-2" class="screen">
+        <div style="min-height:100dvh;display:flex;flex-direction:column;">
+            <div style="background:var(--gradient-hero);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 32px 48px;position:relative;overflow:hidden;">
+                <div style="position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.07);"></div>
+                <div style="font-size:90px;margin-bottom:24px;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.15));">📊</div>
+                <h2 style="color:#fff;font-size:26px;font-weight:800;text-align:center;margin-bottom:10px;letter-spacing:-0.02em;">Track Balances</h2>
+                <p style="color:rgba(255,255,255,0.75);text-align:center;font-size:15px;max-width:240px;line-height:1.55;">See who owes what instantly. Keep track across multiple groups.</p>
+            </div>
+            <div style="background:var(--bg-card);padding:32px 24px 40px;border-radius:28px 28px 0 0;margin-top:-24px;">
+                <div class="onboarding-dots mb-24">
+                    <div class="dot"></div><div class="dot active"></div><div class="dot"></div>
+                </div>
+                <button class="btn btn-primary btn-full ripple mb-12" onclick="app.navigateTo('onboarding-3')">Next →</button>
+                <button class="btn btn-ghost btn-full" onclick="app.navigateTo('login')">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         ONBOARDING 3
+    ═══════════════════════════════════════════ -->
+    <div id="onboarding-3" class="screen">
+        <div style="min-height:100dvh;display:flex;flex-direction:column;">
+            <div style="background:var(--gradient-hero);flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 32px 48px;position:relative;overflow:hidden;">
+                <div style="font-size:90px;margin-bottom:24px;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.15));">✅</div>
+                <h2 style="color:#fff;font-size:26px;font-weight:800;text-align:center;margin-bottom:10px;letter-spacing:-0.02em;">Settle Up Easily</h2>
+                <p style="color:rgba(255,255,255,0.75);text-align:center;font-size:15px;max-width:240px;line-height:1.55;">Pay via eSewa, Khalti, or cash. Email alerts keep everyone in the loop.</p>
+            </div>
+            <div style="background:var(--bg-card);padding:32px 24px 40px;border-radius:28px 28px 0 0;margin-top:-24px;">
+                <div class="onboarding-dots mb-24">
+                    <div class="dot"></div><div class="dot"></div><div class="dot active"></div>
+                </div>
+                <button class="btn btn-primary btn-full ripple mb-12" onclick="app.navigateTo('signup')">Get Started 🚀</button>
+                <button class="btn btn-ghost btn-full" onclick="app.navigateTo('login')">I have an account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         LOGIN
+    ═══════════════════════════════════════════ -->
+    <div id="login" class="screen">
+        <div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--bg-body);">
+            <div style="background:var(--gradient-hero);padding:56px 24px 40px;border-radius:0 0 32px 32px;margin-bottom:24px;">
+                <div style="font-size:36px;margin-bottom:12px;">👋</div>
+                <h1 style="color:#fff;font-size:28px;margin-bottom:4px;">Welcome Back!</h1>
+                <p style="color:rgba(255,255,255,0.72);font-size:14px;">Sign in to your account</p>
+            </div>
+            <div class="container" style="padding-top:0;flex:1;">
+                <form onsubmit="app.handleLogin(event)" novalidate>
+                    <div class="input-group">
+                        <label class="input-label">Email Address</label>
+                        <div class="input-icon-wrap">
+                            <span class="input-icon">✉️</span>
+                            <input type="email" class="input" id="login-email" placeholder="you@example.com" required autocomplete="email" inputmode="email">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Password</label>
+                        <div class="input-icon-wrap">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" class="input" id="login-password" placeholder="Your password" required autocomplete="current-password">
+                        </div>
+                    </div>
+                    <div style="text-align:right;margin-bottom:20px;">
+                        <button type="button" class="link" style="font-size:13px;" onclick="app.showComingSoon('Password reset')">Forgot Password?</button>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full ripple mb-16">Sign In</button>
+                </form>
+
+                <div class="divider">or continue with</div>
+
+                <button class="btn btn-social mb-20" onclick="app.handleGoogleLogin()">
+                    <span style="font-size:20px;font-weight:900;color:#4285F4;font-family:sans-serif;">G</span>
+                    <span style="font-weight:700;">Sign in with Google</span>
+                </button>
+
+                <p class="text-center" style="font-size:14px;color:var(--text-secondary);">
+                    Don't have an account?
+                    <button class="link" onclick="app.navigateTo('signup')">Sign up</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SIGN UP
+    ═══════════════════════════════════════════ -->
+    <div id="signup" class="screen">
+        <div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--bg-body);">
+            <div style="background:var(--gradient-hero);padding:56px 24px 40px;border-radius:0 0 32px 32px;margin-bottom:24px;">
+                <button class="btn-icon" style="background:rgba(255,255,255,0.2);color:#fff;margin-bottom:16px;border:none;" onclick="app.navigateTo('login')">←</button>
+                <h1 style="color:#fff;font-size:28px;margin-bottom:4px;">Create Account</h1>
+                <p style="color:rgba(255,255,255,0.72);font-size:14px;">Start splitting expenses today</p>
+            </div>
+            <div class="container" style="padding-top:0;flex:1;">
+                <form onsubmit="app.handleSignup(event)" novalidate>
+                    <div class="input-group">
+                        <label class="input-label">Full Name</label>
+                        <div class="input-icon-wrap">
+                            <span class="input-icon">👤</span>
+                            <input type="text" class="input" id="signup-name" placeholder="Your full name" required autocomplete="name">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Email Address</label>
+                        <div class="input-icon-wrap">
+                            <span class="input-icon">✉️</span>
+                            <input type="email" class="input" id="signup-email" placeholder="you@example.com" required autocomplete="email" inputmode="email">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Password</label>
+                        <div class="input-icon-wrap">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" class="input" id="signup-password" placeholder="Create a password" required autocomplete="new-password">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Confirm Password</label>
+                        <div class="input-icon-wrap">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" class="input" id="signup-confirm" placeholder="Repeat password" required autocomplete="new-password">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full ripple mb-16">Create Account</button>
+                </form>
+                <p class="text-center" style="font-size:14px;color:var(--text-secondary);">
+                    Already have an account?
+                    <button class="link" onclick="app.navigateTo('login')">Sign in</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         DASHBOARD
+    ═══════════════════════════════════════════ -->
+    <div id="dashboard" class="screen with-nav">
+
+        <div class="hero-card" style="position:relative;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:1;">
+                <div>
+                    <div class="hero-card-label">Total You're Owed</div>
+                    <div class="hero-card-amount" id="total-owed-to-you">₨0.00</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div id="currency-badge" style="background:rgba(255,255,255,0.2);color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;" onclick="app.navigateTo('settings')">NPR ₨</div>
+                    <div class="profile-avatar" style="width:44px;height:44px;font-size:18px;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.2);" id="dashboard-avatar" onclick="app.navigateTo('settings')">U</div>
+                </div>
+            </div>
+            <div class="hero-card-stats" style="position:relative;z-index:1;">
+                <div class="hero-stat">
+                    <div class="hero-stat-label">You Owe</div>
+                    <div class="hero-stat-value" id="total-you-owe">₨0.00</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Total Spent</div>
+                    <div class="hero-stat-value" id="total-expenses">₨0.00</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-label">Groups</div>
+                    <div class="hero-stat-value" id="group-count">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Quick Actions -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+                <button class="card ripple" style="text-align:left;cursor:pointer;padding:16px;" onclick="app.openModal('create-group-modal')">
+                    <div style="font-size:28px;margin-bottom:8px;">👥</div>
+                    <div style="font-weight:700;font-size:14px;color:var(--text-primary);">New Group</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Create a group</div>
+                </button>
+                <button class="card ripple" style="text-align:left;cursor:pointer;padding:16px;" onclick="app.openModal('add-expense-modal')">
+                    <div style="font-size:28px;margin-bottom:8px;">💰</div>
+                    <div style="font-weight:700;font-size:14px;color:var(--text-primary);">Add Expense</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Log a payment</div>
+                </button>
+            </div>
+
+            <!-- Groups -->
+            <div class="section-header mb-12">
+                <div class="section-header-title">Your Groups</div>
+                <button class="section-header-link" onclick="app.setActiveNav(document.querySelector('[data-nav=groups]'));app.navigateTo('groups')">See All</button>
+            </div>
+            <div id="dashboard-groups"></div>
+
+            <!-- Recent Activity -->
+            <div class="section-header mb-12 mt-8">
+                <div class="section-header-title">Recent Activity</div>
+                <button class="section-header-link" onclick="app.navigateTo('reports')">Report</button>
+            </div>
+            <div id="recent-activity"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         GROUPS
+    ═══════════════════════════════════════════ -->
+    <div id="groups" class="screen with-nav">
+        <div class="app-bar">
+            <div class="app-bar-title">Groups</div>
+            <button class="btn btn-primary btn-sm ripple" onclick="app.openModal('create-group-modal')">+ New</button>
+        </div>
+        <div class="container" style="padding-top:8px;">
+            <div id="groups-list"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         GROUP DETAILS
+    ═══════════════════════════════════════════ -->
+    <div id="group-details" class="screen">
+        <!-- Hero -->
+        <div style="background:var(--gradient-hero);padding:56px 20px 28px;position:relative;overflow:hidden;">
+            <div style="position:absolute;top:-50px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.08);pointer-events:none;"></div>
+            <div style="position:absolute;bottom:-30px;left:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.05);pointer-events:none;"></div>
+            <button style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;font-family:var(--font-family);transition:background 0.2s;" onclick="app.navigateTo('groups')">←</button>
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px;">
+                <div id="group-detail-icon" style="width:64px;height:64px;border-radius:18px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:34px;border:2px solid rgba(255,255,255,0.35);box-shadow:0 4px 16px rgba(0,0,0,0.15);overflow:hidden;">👥</div>
+                <div style="min-width:0;">
+                    <h2 style="color:#fff;font-size:22px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="group-detail-name">Group Name</h2>
+                    <div style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;"><span id="group-detail-members">0</span> members</div>
+                </div>
+            </div>
+            <!-- Stat pills with semantic colors -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:10px 12px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size:9px;color:rgba(255,255,255,0.65);font-weight:800;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">TOTAL</div>
+                    <div style="font-size:14px;font-weight:800;color:#fff;letter-spacing:-0.01em;" id="group-total">₨0</div>
+                </div>
+                <div style="background:rgba(34,197,94,0.22);border-radius:12px;padding:10px 12px;backdrop-filter:blur(8px);border:1px solid rgba(34,197,94,0.3);">
+                    <div style="font-size:9px;color:rgba(255,255,255,0.65);font-weight:800;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">OWED</div>
+                    <div style="font-size:14px;font-weight:800;color:#fff;letter-spacing:-0.01em;" id="group-you-are-owed">₨0</div>
+                </div>
+                <div style="background:rgba(239,68,68,0.22);border-radius:12px;padding:10px 12px;backdrop-filter:blur(8px);border:1px solid rgba(239,68,68,0.25);">
+                    <div style="font-size:9px;color:rgba(255,255,255,0.65);font-weight:800;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">YOU OWE</div>
+                    <div style="font-size:14px;font-weight:800;color:#fff;letter-spacing:-0.01em;" id="group-you-owe">₨0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Action Row -->
+            <div style="display:flex;gap:10px;margin-bottom:24px;">
+                <button class="btn btn-primary ripple" style="flex:1;font-size:14px;" onclick="app.openModal('add-expense-modal')">＋ Expense</button>
+                <button class="btn btn-outline ripple" style="flex:1;font-size:14px;" onclick="app.openModal('add-member-modal')">👤 Member</button>
+                <button class="btn btn-ghost ripple" style="padding:14px 16px;" onclick="app.openModal('settle-modal')" title="Settle Up">🎉</button>
+            </div>
+
+            <!-- Expenses -->
+            <div class="section-header mb-12">
+                <div class="section-header-title">Expenses</div>
+                <span id="group-expense-count" style="font-size:11px;font-weight:700;color:var(--text-muted);background:var(--bg-input);padding:3px 9px;border-radius:20px;"></span>
+            </div>
+            <div id="group-expenses-list" style="margin-bottom:4px;"></div>
+
+            <!-- Members -->
+            <div class="section-header mt-20 mb-0" style="margin-bottom:8px;">
+                <div class="section-header-title">Members</div>
+                <span id="group-member-count" style="font-size:11px;font-weight:700;color:var(--text-muted);background:var(--bg-input);padding:3px 9px;border-radius:20px;"></span>
+            </div>
+            <!-- Balance legend -->
+            <div style="display:flex;gap:16px;margin-bottom:10px;">
+                <span style="font-size:11px;font-weight:600;color:var(--success);">● gets back</span>
+                <span style="font-size:11px;font-weight:600;color:var(--error);">● owes</span>
+                <span style="font-size:11px;font-weight:600;color:var(--text-muted);">● settled</span>
+            </div>
+            <div id="group-members-list" style="background:var(--bg-card);border-radius:var(--radius-lg);padding:4px 16px;box-shadow:var(--shadow-card);border:1px solid var(--border-subtle);margin-bottom:24px;"></div>
+
+            <!-- Settle + Leave + Delete -->
+            <button class="btn btn-primary btn-full ripple mb-12" onclick="app.openModal('settle-modal')" style="font-size:15px;letter-spacing:0.01em;">🎉 Settle Up</button>
+            <button id="leave-group-btn" class="btn btn-full ripple mb-12" style="background:transparent;color:var(--error);border:1.5px solid var(--error);font-weight:700;display:none;" onclick="app.leaveGroup()">🚪 Leave Group</button>
+            <button id="delete-group-btn" class="btn btn-full ripple mb-32" style="background:transparent;color:var(--error);border:1.5px solid var(--error);font-weight:700;display:none;" onclick="app.deleteGroup()">🗑️ Delete Group</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         NOTIFICATIONS
+    ═══════════════════════════════════════════ -->
+    <div id="notifications" class="screen with-nav">
+        <div class="app-bar">
+            <div class="app-bar-title">Notifications</div>
+            <button class="btn btn-ghost btn-sm" onclick="app.markAllRead()">Mark all read</button>
+        </div>
+        <div class="container" style="padding-top:8px;">
+            <div id="notifications-list"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SETTINGS
+    ═══════════════════════════════════════════ -->
+    <div id="settings" class="screen with-nav">
+
+        <div class="profile-header">
+            <div class="profile-avatar-wrap">
+                <div class="profile-avatar" id="settings-avatar">U</div>
+            </div>
+            <div class="profile-name" id="settings-name">User Name</div>
+            <div class="profile-email" id="settings-email">user@example.com</div>
+            <button class="profile-edit-btn" onclick="app.openModal('edit-profile-modal')">✏️ Edit Profile</button>
+        </div>
+
+        <div class="container">
+
+            <div class="section-title mb-8">Preferences</div>
+            <div class="settings-section mb-16">
+                <div class="settings-row">
+                    <div class="settings-row-left">
+                        <div class="settings-icon">🌙</div>
+                        <div>
+                            <div class="settings-label">Dark Mode</div>
+                            <div class="settings-sublabel">Easy on the eyes</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="dark-mode-toggle" onchange="app.toggleTheme(this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-row">
+                    <div class="settings-row-left">
+                        <div class="settings-icon">💱</div>
+                        <div>
+                            <div class="settings-label">Currency</div>
+                            <div class="settings-sublabel" id="currency-sublabel">Nepali Rupee (NPR)</div>
+                        </div>
+                    </div>
+                    <select id="currency-select" onchange="app.setCurrency(this.value)"
+                        style="background:var(--bg-input);border:none;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;color:var(--primary);font-family:var(--font-family);cursor:pointer;outline:none;">
+                        <option value="NPR">NPR ₨</option>
+                        <option value="USD">USD $</option>
+                        <option value="INR">INR ₹</option>
+                        <option value="EUR">EUR €</option>
+                        <option value="GBP">GBP £</option>
+                    </select>
+                </div>
+
+                <div class="settings-row">
+                    <div class="settings-row-left">
+                        <div class="settings-icon">📧</div>
+                        <div>
+                            <div class="settings-label">Email Alerts</div>
+                            <div class="settings-sublabel">Notify group members</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="email-alerts-toggle" checked onchange="app.toggleEmailAlerts(this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="section-title mb-8">Account</div>
+            <div class="settings-section mb-16">
+                <div class="settings-row" style="cursor:pointer;" onclick="app.showComingSoon('Push Notifications')">
+                    <div class="settings-row-left">
+                        <div class="settings-icon">🔔</div>
+                        <div>
+                            <div class="settings-label">Push Notifications</div>
+                            <div class="settings-sublabel">Coming in v2.0</div>
+                        </div>
+                    </div>
+                    <div class="settings-chevron">›</div>
+                </div>
+
+                <div class="settings-row" style="cursor:pointer;" onclick="app.showComingSoon('Cloud Sync')">
+                    <div class="settings-row-left">
+                        <div class="settings-icon">☁️</div>
+                        <div>
+                            <div class="settings-label">Cloud Sync</div>
+                            <div class="settings-sublabel">Coming in v2.0</div>
+                        </div>
+                    </div>
+                    <div class="settings-chevron">›</div>
+                </div>
+
+                <div class="settings-row" style="cursor:pointer;" onclick="app.exportData()">
+                    <div class="settings-row-left">
+                        <div class="settings-icon">📥</div>
+                        <div>
+                            <div class="settings-label">Export Data</div>
+                            <div class="settings-sublabel">Download as JSON</div>
+                        </div>
+                    </div>
+                    <div class="settings-chevron">›</div>
+                </div>
+
+                <div class="settings-row" style="cursor:pointer;" onclick="app.navigateTo('receipt-storage')">
+                    <div class="settings-row-left">
+                        <div class="settings-icon">📸</div>
+                        <div>
+                            <div class="settings-label">Receipt Storage</div>
+                            <div class="settings-sublabel">View uploaded receipts</div>
+                        </div>
+                    </div>
+                    <div class="settings-chevron">›</div>
+                </div>
+            </div>
+
+            <div class="settings-section mb-24">
+                <div class="settings-row">
+                    <div class="settings-row-left">
+                        <div class="settings-icon">📱</div>
+                        <div><div class="settings-label">Version</div></div>
+                    </div>
+                    <span style="font-size:13px;font-weight:700;color:var(--primary);">v1.0 Prototype</span>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-row-left">
+                        <div class="settings-icon">⚡</div>
+                        <div><div class="settings-label">Backend</div></div>
+                    </div>
+                    <span style="font-size:12px;font-weight:700;color:var(--warning);">Ready for v2.0</span>
+                </div>
+            </div>
+
+            <button class="btn btn-danger btn-full ripple mb-32" onclick="app.handleLogout()">🚪 Sign Out</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         RECEIPT STORAGE
+    ═══════════════════════════════════════════ -->
+    <div id="receipt-storage" class="screen">
+        <div class="app-bar">
+            <button class="btn-icon" onclick="app.navigateTo('settings')" style="font-size:18px;">←</button>
+            <div class="app-bar-title">Receipts</div>
+            <div style="width:40px;"></div>
+        </div>
+        <div class="container" style="padding-top:8px;">
+            <div id="receipts-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         REPORTS
+    ═══════════════════════════════════════════ -->
+    <div id="reports" class="screen">
+        <div class="app-bar">
+            <button class="btn-icon" onclick="app.navigateTo('dashboard')" style="font-size:18px;">←</button>
+            <div class="app-bar-title">Reports</div>
+            <div style="width:40px;"></div>
+        </div>
+        <div class="container" style="padding-top:8px;">
+            <div class="card mb-16">
+                <div class="input-group">
+                    <label class="input-label">From</label>
+                    <input type="date" class="input" id="report-from">
+                </div>
+                <div class="input-group mb-12" style="margin-top:12px;">
+                    <label class="input-label">To</label>
+                    <input type="date" class="input" id="report-to">
+                </div>
+                <button class="btn btn-primary btn-full ripple" onclick="app.generateReport()">Generate Report</button>
+            </div>
+            <div id="report-summary"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         BOTTOM NAV
+    ═══════════════════════════════════════════ -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-nav="home" onclick="app.setActiveNav(this);app.navigateTo('dashboard')">
+            <div class="nav-item-icon">🏠</div>
+            <div>Home</div>
+        </button>
+        <button class="nav-item" data-nav="groups" onclick="app.setActiveNav(this);app.navigateTo('groups')">
+            <div class="nav-item-icon">👥</div>
+            <div>Groups</div>
+        </button>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding-bottom:8px;">
+            <button class="nav-fab" onclick="app.openModal('add-expense-modal')" aria-label="Add expense">＋</button>
+        </div>
+        <button class="nav-item" data-nav="alerts" onclick="app.setActiveNav(this);app.navigateTo('notifications')">
+            <div class="nav-item-icon" style="position:relative;">
+                🔔
+                <div id="notification-badge" style="position:absolute;top:-5px;right:-8px;background:var(--error);color:#fff;border-radius:20px;min-width:18px;height:18px;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg-card);"></div>
+            </div>
+            <div>Alerts</div>
+        </button>
+        <button class="nav-item" data-nav="settings" onclick="app.setActiveNav(this);app.navigateTo('settings')">
+            <div class="nav-item-icon">⚙️</div>
+            <div>Settings</div>
+        </button>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════
+         MODALS
+    ═══════════════════════════════════════════ -->
+
+    <!-- Add Expense -->
+    <div class="modal-backdrop" id="add-expense-backdrop" onclick="app.closeModal('add-expense-modal')"></div>
+    <div class="modal" id="add-expense-modal">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <h3 class="modal-title">Add Expense 💰</h3>
+            <button class="modal-close" onclick="app.closeModal('add-expense-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <form onsubmit="app.handleAddExpense(event)" novalidate>
+
+                <!-- Amount — visually dominant, first field -->
+                <div class="input-group">
+                    <label class="input-label">Amount (<span id="currency-symbol-label">₨</span>)</label>
+                    <div class="amount-input-wrap">
+                        <span class="currency-prefix" id="currency-prefix-label">₨</span>
+                        <input type="number" class="input" placeholder="0.00" step="0.01" min="0.01"
+                               required id="expense-amount" inputmode="decimal"
+                               style="font-size:32px;font-weight:800;padding-left:40px;letter-spacing:-0.03em;height:64px;">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Description</label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon">📝</span>
+                        <input type="text" class="input" placeholder="What's this for?" required id="expense-description">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Group</label>
+                    <select class="input" required id="expense-group">
+                        <option value="">Select a group</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Category</label>
+                    <select class="input" required id="expense-category" onchange="app.handleCategoryChange(this.value)">
+                        <option value="food">🍔 Food & Drink</option>
+                        <option value="travel">✈️ Travel</option>
+                        <option value="rent">🏠 Rent & Utilities</option>
+                        <option value="utilities">💡 Bills</option>
+                        <option value="entertainment">🎬 Entertainment</option>
+                        <option value="shopping">🛍️ Shopping</option>
+                        <option value="health">🏥 Health</option>
+                        <option value="other">✏️ Other (Custom)</option>
+                    </select>
+                </div>
+
+                <!-- Custom category (hidden) -->
+                <div id="custom-category-section" style="display:none;background:var(--bg-input);border-radius:var(--radius-md);padding:14px;margin-bottom:16px;border:1px solid var(--border-color);">
+                    <div class="input-group">
+                        <label class="input-label">Category Name</label>
+                        <input type="text" class="input" placeholder="e.g., Gym, Stationery…" id="custom-category-name">
+                    </div>
+                    <div class="input-group mb-0">
+                        <label class="input-label">Pick an Icon</label>
+                        <div class="emoji-grid" id="category-emoji-grid"></div>
+                        <input type="hidden" id="custom-category-icon" value="📦">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Paid By</label>
+                    <select class="input" required id="expense-paid-by">
+                        <option value="me">You</option>
+                    </select>
+                </div>
+
+                <!-- Split among — pill checkboxes with hint -->
+                <div class="input-group">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                        <label class="input-label" style="margin:0;">Split Among</label>
+                        <span style="font-size:11px;color:var(--text-muted);font-weight:600;">tap to toggle</span>
+                    </div>
+                    <div id="split-members" style="display:flex;flex-wrap:wrap;gap:8px;min-height:36px;"></div>
+                </div>
+
+                <!-- Receipt — styled upload zone -->
+                <div class="input-group">
+                    <label class="input-label">Receipt Photo (Optional)</label>
+                    <label style="display:flex;align-items:center;gap:12px;background:var(--bg-input);border-radius:var(--radius-md);padding:12px 16px;cursor:pointer;border:1.5px dashed var(--border-color);transition:border-color 0.2s,background 0.2s;">
+                        <span style="font-size:24px;">📷</span>
+                        <div style="flex:1;">
+                            <div style="font-size:13px;font-weight:600;color:var(--text-primary);">Tap to attach receipt</div>
+                            <div id="receipt-filename" style="font-size:11px;color:var(--primary);font-weight:600;margin-top:1px;"></div>
+                        </div>
+                        <input type="file" accept="image/*" id="expense-receipt" style="display:none;"
+                               onchange="this.parentElement.style.borderColor='var(--primary)';document.getElementById('receipt-filename').textContent=this.files[0]?.name||'';">
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full ripple" style="font-size:16px;padding:16px;margin-top:4px;">Add Expense</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Group -->
+    <div class="modal-backdrop" id="create-group-backdrop" onclick="app.closeModal('create-group-modal')"></div>
+    <div class="modal" id="create-group-modal">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <h3 class="modal-title">Create Group</h3>
+            <button class="modal-close" onclick="app.closeModal('create-group-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <form onsubmit="app.handleCreateGroup(event)" novalidate>
+                <div class="input-group">
+                    <label class="input-label">Group Name</label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon">👥</span>
+                        <input type="text" class="input" placeholder="e.g., Pokhara Trip" required id="new-group-name">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Description (Optional)</label>
+                    <input type="text" class="input" placeholder="Brief description" id="new-group-description">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Group Icon</label>
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                        <div id="group-icon-preview" style="width:56px;height:56px;border-radius:14px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:30px;border:2px solid var(--border-color);flex-shrink:0;overflow:hidden;">👥</div>
+                        <div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">Pick emoji or upload image</div>
+                            <label style="display:inline-flex;align-items:center;gap:6px;background:var(--bg-input);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;font-weight:700;color:var(--primary);">
+                                📸 Upload
+                                <input type="file" accept="image/*" id="group-icon-upload" style="display:none;" onchange="app.handleGroupIconUpload(this)">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="emoji-grid" id="group-emoji-grid"></div>
+                    <input type="hidden" id="new-group-icon" value="👥">
+                    <input type="hidden" id="new-group-icon-type" value="emoji">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Add Members</label>
+                    <!-- FIX: Enter key support for adding member email -->
+                    <div style="display:flex;gap:8px;margin-bottom:10px;">
+                        <input type="email" class="input" placeholder="friend@email.com" id="add-member-email" style="flex:1;" inputmode="email"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();app.addMember();}">
+                        <button type="button" class="btn btn-primary btn-sm ripple" onclick="app.addMember()">+ Add</button>
+                    </div>
+                    <div id="group-members-chips" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full ripple">Create Group 🚀</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Member -->
+    <div class="modal-backdrop" id="add-member-backdrop" onclick="app.closeModal('add-member-modal')"></div>
+    <div class="modal" id="add-member-modal">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <h3 class="modal-title">Add Member</h3>
+            <button class="modal-close" onclick="app.closeModal('add-member-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <form onsubmit="app.handleAddMember(event)" novalidate>
+                <div class="input-group">
+                    <label class="input-label">Email Address</label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" class="input" placeholder="friend@example.com" required id="member-email" inputmode="email">
+                    </div>
+                    <p style="font-size:12px;color:var(--text-muted);margin-top:6px;">📧 An invite will be sent automatically.</p>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full ripple">Add Member</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settle Up -->
+    <div class="modal-backdrop" id="settle-backdrop" onclick="app.closeModal('settle-modal')"></div>
+    <div class="modal" id="settle-modal">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <h3 class="modal-title">Settle Up 🎉</h3>
+            <button class="modal-close" onclick="app.closeModal('settle-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <form onsubmit="app.handleSettlement(event)" novalidate>
+                <div class="input-group">
+                    <label class="input-label">Pay To</label>
+                    <select class="input" id="settle-to">
+                        <option value="">Select member</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Amount</label>
+                    <div class="amount-input-wrap">
+                        <span class="currency-prefix">₨</span>
+                        <input type="number" class="input" placeholder="0.00" step="0.01" min="0.01" required id="settle-amount" inputmode="decimal">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Payment Method</label>
+                    <select class="input" id="settle-payment-method">
+                        <option value="esewa">eSewa</option>
+                        <option value="khalti">Khalti</option>
+                        <option value="ime_pay">IME Pay</option>
+                        <option value="bank">Bank Transfer</option>
+                        <option value="cash">Cash</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full ripple">Record Payment ✅</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Profile -->
+    <div class="modal-backdrop" id="edit-profile-backdrop" onclick="app.closeModal('edit-profile-modal')"></div>
+    <div class="modal" id="edit-profile-modal">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <h3 class="modal-title">Edit Profile</h3>
+            <button class="modal-close" onclick="app.closeModal('edit-profile-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <form onsubmit="app.handleEditProfile(event)" novalidate>
+                <div class="input-group">
+                    <label class="input-label">Full Name</label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon">👤</span>
+                        <input type="text" class="input" placeholder="Your name" required id="edit-profile-name" autocomplete="name">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Email</label>
+                    <div class="input-icon-wrap">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" class="input" placeholder="your@email.com" required id="edit-profile-email" autocomplete="email" inputmode="email">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full ripple">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         THEMED PROMPT (replaces browser prompt)
+    ═══════════════════════════════════════════ -->
+    <div class="modal-backdrop" id="themed-prompt-backdrop" onclick="app.closeThemedPrompt()"></div>
+    <div class="modal" id="themed-prompt-modal">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <h3 class="modal-title" id="themed-prompt-title">Enter Value</h3>
+            <button class="modal-close" onclick="app.closeThemedPrompt()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="input-group">
+                <label class="input-label" id="themed-prompt-label"></label>
+                <div class="amount-input-wrap">
+                    <span class="currency-prefix" id="themed-prompt-prefix">₨</span>
+                    <input type="number" id="themed-prompt-input" class="input" placeholder="0.00" step="0.01" min="0.01" inputmode="decimal"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault();app.submitThemedPrompt();}">
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:4px;">
+                <button type="button" class="btn btn-ghost ripple" style="flex:1;" onclick="app.closeThemedPrompt()">Cancel</button>
+                <button type="button" class="btn btn-primary ripple" style="flex:1;" onclick="app.submitThemedPrompt()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         THEMED CONFIRM (replaces browser confirm)
+    ═══════════════════════════════════════════ -->
+    <div class="modal-backdrop" id="themed-confirm-backdrop" onclick="app.closeThemedConfirm()"></div>
+    <div class="modal" id="themed-confirm-modal">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <h3 class="modal-title" id="themed-confirm-title">Confirm</h3>
+            <button class="modal-close" onclick="app.closeThemedConfirm()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:15px;color:var(--text-secondary);margin-bottom:24px;line-height:1.6;" id="themed-confirm-message"></p>
+            <div style="display:flex;gap:10px;">
+                <button type="button" class="btn btn-ghost ripple" style="flex:1;" onclick="app.closeThemedConfirm()">Cancel</button>
+                <button type="button" class="btn btn-primary ripple" style="flex:1;" id="themed-confirm-ok" onclick="app.confirmThemedConfirm()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+</div><!-- .mobile-container -->
+
+<!-- Confetti -->
+<canvas id="confetti-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;display:none;"></canvas>
+
+<!-- Toast container -->
+<div id="toast-container" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:88%;max-width:340px;"></div>
+
+<!-- Scripts -->
+<script src="services/storage.service.js"></script>
+<script src="services/auth.service.js"></script>
+<script src="services/group.service.js"></script>
+<script src="services/expense.service.js"></script>
+<script src="services/notification.service.js"></script>
+<script src="services/email.service.js"></script>
+<script src="services/api.service.js"></script>
+<script src="calculations.js"></script>
+<script src="animations.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
