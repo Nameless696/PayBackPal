@@ -369,32 +369,16 @@ const app = (() => {
         // Try to pull all data from backend and hydrate localStorage
         try {
             const sync = await ApiService.syncAll();
-            if (sync.groups?.length) {
-                StorageService.saveGroups(sync.groups);
-                GroupService.groups = sync.groups;
-            }
-            if (sync.expenses?.length) {
-                StorageService.saveExpenses(sync.expenses);
-                ExpenseService.expenses = sync.expenses;
-            }
+            // Always overwrite localStorage with backend data (clears any stale sample data)
+            StorageService.saveGroups(sync.groups || []);
+            GroupService.groups = sync.groups || [];
+            StorageService.saveExpenses(sync.expenses || []);
+            ExpenseService.expenses = sync.expenses || [];
             if (sync.notifications?.length) {
                 StorageService.saveNotifications(sync.notifications);
             }
-            // First-time: push any existing local data up to backend
-            if (!sync.groups?.length && StorageService.getGroups().length > 0) {
-                ApiService.importLocalData().catch(e => console.warn('[Sync] Import failed:', e.message));
-            }
         } catch (err) {
             console.warn('[Sync] Backend unreachable, using local data:', err.message);
-            // Seed sample data if nothing stored locally
-            if (GroupService.getAll().length === 0) {
-                GroupService.createSampleData?.();
-                const groups = GroupService.getAll();
-                if (groups.length) {
-                    const g = groups[0];
-                    ExpenseService.createSampleData?.(g.id, user, g.members.map(m => m.id || m));
-                }
-            }
         }
         updateUserUI(user);
         renderDashboard();
@@ -1410,14 +1394,6 @@ const app = (() => {
             const user = AuthService.getCurrentUser();
             if (user) {
                 updateUserUI(user);
-                if (GroupService.getAll().length === 0) {
-                    GroupService.createSampleData?.();
-                    const groups = GroupService.getAll();
-                    if (groups.length) {
-                        const g = groups[0];
-                        ExpenseService.createSampleData?.(g.id, user, (g.members || []).map(m => typeof m === 'string' ? m : m.id));
-                    }
-                }
                 renderDashboard();
                 document.getElementById('dashboard').classList.add('active');
                 const nav = document.querySelector('.bottom-nav');
