@@ -158,6 +158,19 @@ const ExpenseService = {
     },
 
     /**
+     * Update an existing expense (description, amount, category).
+     */
+    updateExpense(id, updates) {
+        const expense = this.expenses.find(e => e.id === id);
+        if (!expense) return null;
+        if (updates.amount !== undefined) updates.amount = Math.round(Number(updates.amount) * 100) / 100;
+        Object.assign(expense, updates);
+        StorageService.saveExpenses(this.expenses);
+        this._bg(ApiService.updateExpense(id, updates));
+        return expense;
+    },
+
+    /**
      * Delete an expense by ID.
      */
     deleteExpense(id) {

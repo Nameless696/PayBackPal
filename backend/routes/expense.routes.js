@@ -5,6 +5,7 @@ const {
     getExpenses,
     addExpense,
     getExpense,
+    updateExpense,
     deleteExpense,
     settleDebt,
 } = require('../controllers/expense.controller');
@@ -19,6 +20,7 @@ router.post('/settle', settleDebt);
 
 router.route('/:id')
     .get(getExpense)
+    .patch(updateExpense)
     .delete(deleteExpense);
 
 module.exports = router;

@@ -15,8 +15,8 @@ const MemberSchema = new mongoose.Schema(
 
 const GroupSchema = new mongoose.Schema(
     {
-        name:        { type: String, required: [true, 'Group name is required'], trim: true },
-        description: { type: String, default: '' },
+        name:        { type: String, required: [true, 'Group name is required'], trim: true, maxlength: [60, 'Group name must be under 60 characters'] },
+        description: { type: String, default: '', maxlength: [300, 'Description must be under 300 characters'] },
         icon:        { type: String, default: '👥' },
         iconType:    { type: String, enum: ['emoji', 'image'], default: 'emoji' },
         members:     [MemberSchema],
@@ -37,5 +37,9 @@ GroupSchema.set('toJSON', {
         return ret;
     },
 });
+
+// Indexes for common queries
+GroupSchema.index({ 'members.id': 1, createdAt: -1 });
+GroupSchema.index({ createdBy: 1 });
 
 module.exports = mongoose.model('Group', GroupSchema);

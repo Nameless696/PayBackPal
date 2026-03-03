@@ -63,7 +63,7 @@ exports.updateGroup = async (req, res, next) => {
             return res.status(403).json({ message: 'Only the admin can update this group' });
         }
 
-        const allowed = ['name', 'description', 'icon', 'iconType', 'createdBy'];
+        const allowed = ['name', 'description', 'icon', 'iconType'];
         allowed.forEach(f => { if (req.body[f] !== undefined) group[f] = req.body[f]; });
         await group.save();
         res.json({ group: group.toJSON() });
@@ -101,7 +101,7 @@ exports.addMember = async (req, res, next) => {
         const { id, name, email } = req.body;
         if (!name) return res.status(400).json({ message: 'Member name is required' });
 
-        const dup = group.members.some(m => (m.id && m.id === id) || (m.email && m.email === email));
+        const dup = group.members.some(m => (id && m.id && m.id === id) || (email && m.email && m.email === email));
         if (dup) return res.status(400).json({ message: 'Member already in group' });
 
         group.members.push({ id: id || `m${Date.now()}`, name, email: email || '' });

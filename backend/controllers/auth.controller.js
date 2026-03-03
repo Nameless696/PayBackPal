@@ -59,9 +59,9 @@ exports.register = async (req, res, next) => {
         const existing = await User.findOne({ email: email.toLowerCase().trim() });
         if (existing) {
             if (!existing.isVerified) {
-                return res.status(400).json({ message: 'Email registered but not verified. Use resend to get a new code.', needsVerification: true, email: existing.email });
+                return res.status(400).json({ message: 'A verification code has been sent to this email.', needsVerification: true, email: existing.email });
             }
-            return res.status(400).json({ message: 'Email is already registered' });
+            return res.status(400).json({ message: 'An account with this email already exists. Please sign in.' });
         }
 
         const code = makeCode();
@@ -184,8 +184,8 @@ exports.updateProfile = async (req, res, next) => {
         if (name)  user.name  = name.trim();
         if (email) user.email = email.toLowerCase().trim();
         if (password) {
-            if (password.length < 6) {
-                return res.status(400).json({ message: 'Password must be at least 6 characters' });
+            if (password.length < 8) {
+                return res.status(400).json({ message: 'Password must be at least 8 characters' });
             }
             user.password = password; // pre-save hook will re-hash
         }

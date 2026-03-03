@@ -34,13 +34,23 @@ const AuthService = {
             this.currentUser = res.user;
             StorageService.saveUser(this.currentUser);
             return { success: true, user: this.currentUser };
-        } catch (apiErr) {            // Backend rejected because email is not verified
+        } catch (apiErr) {
+            // Backend rejected because email is not verified
             if (apiErr.message?.toLowerCase().includes('verify')) {
                 return { success: false, needsVerification: true, email, message: apiErr.message };
-            }            console.warn('[Auth] API login failed, using local fallback:', apiErr.message);
+            }
+            // Only fall back to local auth when the backend is genuinely unreachable.
+            // If the backend responded with an auth error (401/403/wrong password),
+            // return that error directly — never grant access via the local fallback.
+            const isNetworkError = ['failed to fetch', 'networkerror', 'econnrefused', 'load failed', 'network request failed']
+                .some(k => apiErr.message?.toLowerCase().includes(k));
+            if (!isNetworkError) {
+                return { success: false, message: apiErr.message || 'Invalid email or password' };
+            }
+            console.warn('[Auth] Backend unreachable, using local fallback:', apiErr.message);
         }
 
-        // ── Local fallback ──────────────────────────────────────
+        // ── Local fallback (offline only) ──────────────────────────────────────
         return this._localLogin(email, password);
     },
 
@@ -58,14 +68,16 @@ const AuthService = {
             StorageService.saveUser(this.currentUser);
             return { success: true, user: this.currentUser };
         } catch (apiErr) {
-            console.warn('[Auth] API signup failed, using local fallback:', apiErr.message);
-            // Check if the backend said it's a duplicate email
-            if (apiErr.message?.toLowerCase().includes('already')) {
-                return { success: false, message: 'Email is already registered' };
+            // Backend rejected (duplicate email, validation error, etc.) — return error directly
+            const isNetworkError = ['failed to fetch', 'networkerror', 'econnrefused', 'load failed', 'network request failed']
+                .some(k => apiErr.message?.toLowerCase().includes(k));
+            if (!isNetworkError) {
+                return { success: false, message: apiErr.message || 'Registration failed' };
             }
+            console.warn('[Auth] Backend unreachable, using local fallback:', apiErr.message);
         }
 
-        // ── Local fallback ──────────────────────────────────────
+        // ── Local fallback (offline only) ──────────────────────────────────────
         return this._localSignup(name, email, password);
     },
 
@@ -150,7 +162,11 @@ const AuthService = {
         const creds      = this._getCredentials();
         const storedHash = creds[normalizedEmail];
 
-        if (storedHash && storedHash !== this._hashPassword(password)) {
+        // Require credentials to exist — don't create an account for unknown emails
+        if (!storedHash) {
+            return { success: false, message: 'No local account found. Please register or connect to the server.' };
+        }
+        if (storedHash !== this._hashPassword(password)) {
             return { success: false, message: 'Incorrect password' };
         }
 

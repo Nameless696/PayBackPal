@@ -6,8 +6,8 @@ const mongoose = require('mongoose');
 const ExpenseSchema = new mongoose.Schema(
     {
         groupId:    { type: mongoose.Schema.Types.ObjectId, ref: 'Group', required: true },
-        amount:     { type: Number, required: true, min: 0 },
-        description:{ type: String, required: true, trim: true },
+        amount:     { type: Number, required: true, min: 0, max: 10000000 },
+        description:{ type: String, required: true, trim: true, maxlength: [200, 'Description must be under 200 characters'] },
         category:   { type: String, default: 'other' },
         paidBy:     { type: String, required: true },   // member id (string)
         splitAmong: { type: [String], default: [] },    // array of member ids
@@ -40,5 +40,9 @@ ExpenseSchema.set('toJSON', {
         return ret;
     },
 });
+
+// Indexes for common queries
+ExpenseSchema.index({ groupId: 1, date: -1 });
+ExpenseSchema.index({ createdBy: 1, date: -1 });
 
 module.exports = mongoose.model('Expense', ExpenseSchema);

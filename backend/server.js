@@ -75,6 +75,14 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/', authLimiter);
 
+// Resend-verification gets a very strict limit (3 per hour per IP)
+const resendLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 3,
+    message: { message: 'Too many verification code requests. Please wait an hour before trying again.' },
+});
+app.use('/api/auth/resend-verification', resendLimiter);
+
 // ── Mount API Routes ──────────────────────────────────────────────
 app.use('/api/auth',          authRoutes);
 app.use('/api/groups',        groupRoutes);

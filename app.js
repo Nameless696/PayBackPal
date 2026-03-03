@@ -320,6 +320,11 @@ const app = (() => {
         const email    = document.getElementById('signup-email').value.trim();
         const password = document.getElementById('signup-password').value;
         const confirm  = document.getElementById('signup-confirm').value;
+        if (password.length < 8) {
+            showToast('Password must be at least 8 characters', 'error');
+            if (typeof animations !== 'undefined') animations.shakeElement(document.getElementById('signup-password').closest('.input-group'));
+            return;
+        }
         if (password !== confirm) {
             showToast('Passwords do not match', 'error');
             if (typeof animations !== 'undefined') animations.shakeElement(document.getElementById('signup-confirm').closest('.input-group'));
@@ -399,14 +404,12 @@ const app = (() => {
      * Nuclear reset — clears all localStorage and reloads.
      * Only called when app data is corrupted.
      */
-    function clearAppData() {
-        if (typeof themedConfirm === 'function') {
-            themedConfirm(
-                'Reset App Data',
-                'This will delete all groups, expenses and settings. Are you sure?',
-                () => { localStorage.clear(); location.reload(); }
-            );
-        } else {
+    async function clearAppData() {
+        const confirmed = await themedConfirm(
+            'This will delete all groups, expenses and settings. Are you sure?',
+            'Reset App Data', 'Reset', true
+        );
+        if (confirmed) {
             localStorage.clear();
             location.reload();
         }
@@ -449,10 +452,17 @@ const app = (() => {
         e.preventDefault();
         const name  = document.getElementById('edit-profile-name').value.trim();
         const email = document.getElementById('edit-profile-email').value.trim();
-        await AuthService.updateProfile?.({ name, email });
-        updateUserUI({ name, email });
-        closeModal('edit-profile-modal');
-        showToast('Profile updated ✅', 'success');
+        if (!name)  { showToast('Name is required', 'error'); return; }
+        if (!email) { showToast('Email is required', 'error'); return; }
+        try {
+            const ok = await AuthService.updateProfile?.({ name, email });
+            if (ok === false) throw new Error('Update failed');
+            updateUserUI({ name, email });
+            closeModal('edit-profile-modal');
+            showToast('Profile updated', 'success');
+        } catch (err) {
+            showToast(err.message || 'Failed to update profile', 'error');
+        }
     }
 
     /* ════════════════════════════════════════════════
@@ -545,7 +555,9 @@ const app = (() => {
     ════════════════════════════════════════════════ */
     function renderGroups() {
         try {
-            const groups   = GroupService.getAll();
+            const all      = GroupService.getAll();
+            const groups   = all.filter(g => !g.archived);
+            const archived = all.filter(g =>  g.archived);
             const expenses = ExpenseService.getAll();
             const list     = document.getElementById('groups-list');
             if (!list) return;
@@ -560,6 +572,13 @@ const app = (() => {
             } else {
                 list.innerHTML = groups.map(g => buildGroupCard(g, expenses)).join('');
             }
+            // Archived groups section
+            const archivedList = document.getElementById('archived-groups-list');
+            if (archivedList) archivedList.innerHTML = archived.map(g => buildGroupCard(g, expenses)).join('');
+            const showArchivedBtn = document.getElementById('show-archived-btn');
+            if (showArchivedBtn) showArchivedBtn.style.display = archived.length ? 'block' : 'none';
+            const searchEl = document.getElementById('groups-search');
+            if (searchEl) searchEl.value = '';
         } catch (err) {
             console.error('[renderGroups] Error:', err);
             const list = document.getElementById('groups-list');
@@ -639,6 +658,10 @@ const app = (() => {
                         ? 'background:rgba(245,158,11,0.12);color:#D97706;'
                         : 'background:var(--primary-light);color:var(--primary);';
                     const tagLabel     = isSettlement ? '✓ settled' : isContrib ? '💰 contrib' : null;
+                    const canEdit      = !isSettlement && !isContrib;
+                    const receiptImg   = ex.receipt
+                        ? `<button onclick="app.openReceiptForExpense('${ex.id}')" style="margin-top:3px;font-size:10px;background:rgba(108,99,255,0.1);color:var(--primary);border:none;padding:2px 7px;border-radius:5px;cursor:pointer;">📸 Receipt</button>`
+                        : '';
                     return `
                     <div class="expense-card slide-up" style="animation-delay:${i * 40}ms;">
                         <div class="expense-icon" style="${isSettlement ? 'background:rgba(34,197,94,0.12);' : isContrib ? 'background:rgba(245,158,11,0.12);' : ''}">${getCategoryIcon(ex)}</div>
@@ -652,10 +675,12 @@ const app = (() => {
                                 &nbsp;·&nbsp;${formatDate(ex.date)}
                                 &nbsp;·&nbsp;${ex.splitAmong?.length || 1} people
                             </div>
+                            ${receiptImg}
                         </div>
-                        <div style="text-align:right;flex-shrink:0;margin-left:8px;">
+                        <div style="text-align:right;flex-shrink:0;margin-left:8px;display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
                             <div class="amount-positive" style="font-size:15px;">${fmt(ex.amount)}</div>
-                            <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${fmt(share)}/ea</div>
+                            <div style="font-size:11px;color:var(--text-muted);">${fmt(share)}/ea</div>
+                            ${canEdit ? `<button onclick="app.openEditExpense('${ex.id}')" style="font-size:10px;background:rgba(108,99,255,0.1);color:var(--primary);border:none;padding:2px 7px;border-radius:5px;cursor:pointer;">✏️ edit</button>` : ''}
                         </div>
                     </div>`;
                 }).join('');
@@ -702,8 +727,8 @@ const app = (() => {
                 const isGroupAdmin = m.id === group.createdBy || m.email === adminMember?.email || (idx === 0 && !group.createdBy);
                 const isMe = !!(user && (m.id === user.id || m.id === 'me' || m.email === user.email));
                 const bal  = memberBalances[m.id] || 0;
-                const balColor = bal > 0.5 ? 'var(--success)' : bal < -0.5 ? 'var(--error)' : 'var(--text-muted)';
-                const balText  = bal > 0.5 ? `+${fmt(bal)}` : bal < -0.5 ? `-${fmt(Math.abs(bal))}` : 'settled';
+                const balColor = bal > 0.01 ? 'var(--success)' : bal < -0.01 ? 'var(--error)' : 'var(--text-muted)';
+                const balText  = bal > 0.01 ? `+${fmt(bal)}` : bal < -0.01 ? `-${fmt(Math.abs(bal))}` : 'settled';
                 const avatarBg = isGroupAdmin ? 'linear-gradient(135deg,#F59E0B,#D97706)' : avatarColors[idx % avatarColors.length];
                 return `
                 <div class="list-item" style="padding:12px 0;gap:10px;">
@@ -734,11 +759,18 @@ const app = (() => {
                 members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
         }
 
+        // Reset simplify debts state on each group open
+        _simplifyShowing = false;
+        const simplifySection = document.getElementById('simplify-debts-section');
+        if (simplifySection) simplifySection.style.display = 'none';
+
         // Show/hide leave button for non-admins
-        const leaveBtn  = document.getElementById('leave-group-btn');
-        const deleteBtn = document.getElementById('delete-group-btn');
-        if (leaveBtn)  leaveBtn.style.display  = isAdmin ? 'none' : 'block';
-        if (deleteBtn) deleteBtn.style.display = isAdmin ? 'block' : 'none';
+        const leaveBtn    = document.getElementById('leave-group-btn');
+        const deleteBtn   = document.getElementById('delete-group-btn');
+        const archiveBtn  = document.getElementById('archive-group-btn');
+        if (leaveBtn)   leaveBtn.style.display   = isAdmin ? 'none' : 'block';
+        if (deleteBtn)  deleteBtn.style.display  = isAdmin ? 'block' : 'none';
+        if (archiveBtn) archiveBtn.textContent   = group.archived ? '📦 Unarchive Group' : '📦 Archive Group';
 
         navigateTo('group-details');
         } catch (err) {
@@ -806,13 +838,15 @@ const app = (() => {
         const groupId     = document.getElementById('expense-group').value;
         if (!groupId) { showToast('Please select a group', 'error'); return; }
 
-        const amount      = parseFloat(document.getElementById('expense-amount').value);
+        const amount      = Math.round(parseFloat(document.getElementById('expense-amount').value) * 100) / 100;
         const description = document.getElementById('expense-description').value.trim();
         const category    = document.getElementById('expense-category').value;
         const paidBy      = document.getElementById('expense-paid-by').value;
 
-        if (!amount || amount <= 0) { showToast('Please enter a valid amount', 'error'); return; }
-        if (!description)           { showToast('Please add a description', 'error'); return; }
+        if (!amount || amount <= 0)       { showToast('Please enter a valid amount', 'error'); return; }
+        if (amount > 10_000_000)          { showToast('Amount seems too large. Please double-check.', 'error'); return; }
+        if (!description)                 { showToast('Please add a description', 'error'); return; }
+        if (description.length > 200)     { showToast('Description must be under 200 characters', 'error'); return; }
 
         // ── Duplicate detection ──────────────────────────────────────
         const recentExpenses = ExpenseService.getByGroup(groupId);
@@ -871,8 +905,30 @@ const app = (() => {
         };
 
         if (receiptFile) {
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+            if (!validTypes.includes(receiptFile.type)) {
+                showToast('Receipt must be an image file (JPG, PNG, GIF, WebP)', 'error');
+                return;
+            }
+            if (receiptFile.size > 5 * 1024 * 1024) {
+                showToast('Receipt image must be under 5MB', 'error');
+                return;
+            }
+            const submitBtn = e.target.querySelector('[type=submit]');
+            if (submitBtn) submitBtn.disabled = true;
             const reader = new FileReader();
-            reader.onload = evt => saveExpense(evt.target.result);
+            reader.onload = async evt => {
+                try {
+                    const compressed = await compressImage(evt.target.result);
+                    saveExpense(compressed);
+                } finally {
+                    if (submitBtn) submitBtn.disabled = false;
+                }
+            };
+            reader.onerror = () => {
+                if (submitBtn) submitBtn.disabled = false;
+                showToast('Failed to read receipt image', 'error');
+            };
             reader.readAsDataURL(receiptFile);
         } else {
             saveExpense();
@@ -922,6 +978,10 @@ const app = (() => {
         const icon     = document.getElementById('new-group-icon').value     || '👥';
         const iconType = document.getElementById('new-group-icon-type').value || 'emoji';
         const user     = AuthService.getCurrentUser();
+
+        if (!name)             { showToast('Group name is required', 'error'); return; }
+        if (name.length > 60)  { showToast('Group name must be under 60 characters', 'error'); return; }
+        if (desc.length > 300) { showToast('Description must be under 300 characters', 'error'); return; }
 
         const group = GroupService.create({
             name, description: desc, icon, iconType,
@@ -1105,8 +1165,8 @@ const app = (() => {
                 </div>`;
         } else {
             grid.innerHTML = expenses.map(e => `
-                <div style="border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-card);cursor:pointer;border:1px solid var(--border-subtle);" onclick="this.querySelector('img').requestFullscreen?.()">
-                    <img src="${e.receipt}" style="width:100%;aspect-ratio:1;object-fit:cover;">
+                <div style="border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-card);cursor:pointer;border:1px solid var(--border-subtle);" onclick="app.openReceiptForExpense('${e.id}')">
+                    <img src="${e.receipt}" style="width:100%;aspect-ratio:1;object-fit:cover;" loading="lazy">
                     <div style="padding:8px 10px;background:var(--bg-card);">
                         <div style="font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.description}</div>
                         <div style="font-size:11px;color:var(--text-muted);">${formatDate(e.date)}</div>
@@ -1430,6 +1490,218 @@ const app = (() => {
     }
 
     /* ════════════════════════════════════════════════
+       LOADING OVERLAY
+    ════════════════════════════════════════════════ */
+    function showLoading(msg = '') {
+        const overlay = document.getElementById('loading-overlay');
+        const msgEl   = document.getElementById('loading-overlay-msg');
+        if (overlay) overlay.style.display = 'flex';
+        if (msgEl)   msgEl.textContent = msg;
+    }
+    function hideLoading() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    /* ════════════════════════════════════════════════
+       RECEIPT LIGHTBOX
+    ════════════════════════════════════════════════ */
+    function openReceiptLightbox(src, desc) {
+        const imgEl  = document.getElementById('receipt-lightbox-img');
+        const descEl = document.getElementById('receipt-lightbox-desc');
+        if (imgEl)  imgEl.src          = src;
+        if (descEl) descEl.textContent = desc || '';
+        openModal('receipt-lightbox-modal');
+    }
+    function closeReceiptLightbox() {
+        closeModal('receipt-lightbox-modal');
+        const imgEl = document.getElementById('receipt-lightbox-img');
+        if (imgEl) imgEl.src = '';
+    }
+
+    // Safe wrapper: looks up expense by ID so receipt data never touches onclick attributes
+    function openReceiptForExpense(expenseId) {
+        const ex = ExpenseService.getById(expenseId);
+        if (!ex?.receipt) return;
+        openReceiptLightbox(ex.receipt, ex.description || '');
+    }
+
+    /* ════════════════════════════════════════════════
+       EDIT EXPENSE
+    ════════════════════════════════════════════════ */
+    function openEditExpense(expenseId) {
+        const expense = ExpenseService.getById(expenseId);
+        if (!expense) return;
+        document.getElementById('edit-expense-id').value          = expense.id;
+        document.getElementById('edit-expense-description').value = expense.description;
+        document.getElementById('edit-expense-amount').value      = expense.amount;
+        const catEl    = document.getElementById('edit-expense-category');
+        if (catEl) catEl.value = expense.category || 'other';
+        const prefixEl = document.getElementById('edit-expense-currency-prefix');
+        if (prefixEl) prefixEl.textContent = currencies[currentCurrency]?.symbol || '₨';
+        openModal('edit-expense-modal');
+    }
+
+    function handleEditExpense(e) {
+        e.preventDefault();
+        const id          = document.getElementById('edit-expense-id').value;
+        const description = document.getElementById('edit-expense-description').value.trim();
+        const amount      = Math.round(parseFloat(document.getElementById('edit-expense-amount').value) * 100) / 100;
+        const category    = document.getElementById('edit-expense-category').value;
+        if (!description)           { showToast('Please add a description', 'error'); return; }
+        if (!amount || amount <= 0) { showToast('Please enter a valid amount', 'error'); return; }
+        ExpenseService.updateExpense(id, { description, amount, category });
+        closeModal('edit-expense-modal');
+        showToast('Expense updated!', 'success');
+        renderDashboard();
+        if (currentGroupId) openGroup(currentGroupId);
+    }
+
+    /* ════════════════════════════════════════════════
+       SIMPLIFY DEBTS
+    ════════════════════════════════════════════════ */
+    let _simplifyShowing = false;
+
+    function toggleSimplifyDebts() {
+        const section = document.getElementById('simplify-debts-section');
+        if (!section) return;
+        _simplifyShowing = !_simplifyShowing;
+        if (_simplifyShowing) {
+            const expenses     = ExpenseService.getByGroup(currentGroupId);
+            const group        = GroupService.getById(currentGroupId);
+            const members      = normalizeMembers(group?.members);
+            let transactions   = [];
+            if (typeof calculations !== 'undefined' && calculations.minimizeTransactions) {
+                const result = calculations.minimizeTransactions(expenses);
+                transactions = result?.transactions || [];
+            }
+            const listEl = document.getElementById('simplify-debts-list');
+            if (listEl) {
+                if (!transactions.length) {
+                    listEl.textContent = 'Everyone is settled up!';
+                } else {
+                    listEl.innerHTML = transactions.map(t =>
+                        `<div><strong>${t.from}</strong> pays <strong>${t.to}</strong> ${fmt(t.amount)}</div>`
+                    ).join('');
+                }
+            }
+            section.style.display = 'block';
+        } else {
+            section.style.display = 'none';
+        }
+    }
+
+    /* ════════════════════════════════════════════════
+       ARCHIVE GROUP
+    ════════════════════════════════════════════════ */
+    async function archiveGroup() {
+        if (!currentGroupId) return;
+        const group = GroupService.getById(currentGroupId);
+        if (!group) return;
+        const isArchived = !!group.archived;
+        const label      = isArchived ? 'Unarchive' : 'Archive';
+        const confirmed  = await themedConfirm(
+            `${label} "${group.name}"? ${isArchived ? 'It will appear in your main group list again.' : 'It will be hidden from the main list.'}`,
+            `${label} Group`, label, false
+        );
+        if (!confirmed) return;
+        GroupService.updateGroup(currentGroupId, { archived: !isArchived });
+        showToast(`"${group.name}" ${label.toLowerCase()}d`, 'info');
+        navigateTo('groups');
+        renderGroups();
+        renderDashboard();
+    }
+
+    let _showingArchived = false;
+
+    function toggleArchivedGroups() {
+        _showingArchived = !_showingArchived;
+        const section = document.getElementById('archived-groups-section');
+        const btn     = document.getElementById('show-archived-btn');
+        if (section) section.style.display = _showingArchived ? 'block' : 'none';
+        if (btn)     btn.textContent        = _showingArchived ? 'Hide archived ›' : 'Show archived groups ›';
+    }
+
+    /* ════════════════════════════════════════════════
+       CSV EXPORT
+    ════════════════════════════════════════════════ */
+    function exportCSV() {
+        const expenses = ExpenseService.getAll();
+        const groups   = GroupService.getAll();
+        const groupMap = {};
+        groups.forEach(g => { groupMap[g.id] = g.name; });
+        const rows = [['Date', 'Group', 'Description', 'Category', 'Amount', 'Paid By', 'Type']];
+        expenses.forEach(e => {
+            rows.push([
+                new Date(e.date).toLocaleDateString('en-GB'),
+                `"${(groupMap[e.groupId] || e.group || '').replace(/"/g, '""')}"`,
+                `"${(e.description || '').replace(/"/g, '""')}"`,
+                e.category || 'other',
+                (Number(e.amount) || 0).toFixed(2),
+                e.paidBy || '',
+                e.isSettlement ? 'settlement' : e.isContribution ? 'contribution' : 'expense',
+            ]);
+        });
+        const csv  = rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a    = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `paybackpal-export-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        showToast('CSV exported!', 'success');
+    }
+
+    /* ════════════════════════════════════════════════
+       SEARCH / FILTER GROUPS
+    ════════════════════════════════════════════════ */
+    let _filterGroupsTimer = null;
+    function filterGroups(query) {
+        clearTimeout(_filterGroupsTimer);
+        _filterGroupsTimer = setTimeout(() => _doFilterGroups(query), 200);
+    }
+    function _doFilterGroups(query) {
+        const all      = GroupService.getAll();
+        const active   = all.filter(g => !g.archived);
+        const archived = all.filter(g =>  g.archived);
+        const expenses = ExpenseService.getAll();
+        const list     = document.getElementById('groups-list');
+        if (!list) return;
+        const q        = (query || '').toLowerCase();
+        const filtered = q ? active.filter(g => g.name.toLowerCase().includes(q)) : active;
+        if (!filtered.length) {
+            list.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No groups found</div></div>`;
+        } else {
+            list.innerHTML = filtered.map(g => buildGroupCard(g, expenses)).join('');
+        }
+        const showArchivedBtn = document.getElementById('show-archived-btn');
+        if (showArchivedBtn) showArchivedBtn.style.display = archived.length && !q ? 'block' : 'none';
+    }
+
+    /* ════════════════════════════════════════════════
+       IMAGE COMPRESSION
+    ════════════════════════════════════════════════ */
+    function compressImage(dataUrl, maxWidth = 1024, quality = 0.75) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let { width, height } = img;
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width  = maxWidth;
+                }
+                canvas.width  = width;
+                canvas.height = height;
+                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = () => resolve(dataUrl);
+            img.src = dataUrl;
+        });
+    }
+
+    /* ════════════════════════════════════════════════
        INIT
     ════════════════════════════════════════════════ */
     function init() {
@@ -1440,6 +1712,18 @@ const app = (() => {
 
         const emailToggle = document.getElementById('email-alerts-toggle');
         if (emailToggle) emailToggle.checked = areEmailAlertsOn();
+
+        // Network status
+        const offlineBanner = document.getElementById('offline-indicator');
+        if (offlineBanner && !navigator.onLine) offlineBanner.style.display = 'block';
+        window.addEventListener('online',  () => {
+            if (offlineBanner) offlineBanner.style.display = 'none';
+            showToast('Back online', 'success');
+        });
+        window.addEventListener('offline', () => {
+            if (offlineBanner) offlineBanner.style.display = 'block';
+            showToast('You are offline — changes will sync when reconnected', 'warning');
+        });
 
         // Splash auto-advance
         setTimeout(() => {
@@ -1477,11 +1761,14 @@ const app = (() => {
 
         // Expenses
         handleAddExpense, handleCategoryChange,
+        openEditExpense, handleEditExpense,
 
         // Groups
         handleCreateGroup, addMember, removeMember, handleGroupIconUpload,
         handleAddMember, handleSettlement, populateSettleModal,
         openGroup, removeGroupMember, makeAdmin, setContribution, leaveGroup, deleteGroup,
+        archiveGroup, toggleArchivedGroups,
+        filterGroups,
 
         // Notifications
         markAllRead,
@@ -1490,7 +1777,12 @@ const app = (() => {
         selectCategoryEmoji, selectGroupEmoji,
 
         // Reports / Export
-        generateReport, exportData,
+        generateReport, exportData, exportCSV,
+
+        // New features
+        openReceiptLightbox, closeReceiptLightbox, openReceiptForExpense,
+        toggleSimplifyDebts,
+        showLoading, hideLoading,
 
         // Themed modals (wired to HTML onclick)
         confirmThemedConfirm, closeThemedConfirm,

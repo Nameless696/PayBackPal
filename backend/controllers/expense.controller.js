@@ -36,8 +36,18 @@ exports.getExpenses = async (req, res, next) => {
             query.groupId = { $in: userGroups.map(g => g._id) };
         }
 
-        const expenses = await Expense.find(query).sort('-date');
-        res.json({ expenses: expenses.map(e => e.toJSON()) });
+        const page  = Math.max(1, parseInt(req.query.page)  || 1);
+        const limit = Math.min(100, parseInt(req.query.limit) || 50);
+        const skip  = (page - 1) * limit;
+
+        const [expenses, total] = await Promise.all([
+            Expense.find(query).sort('-date').skip(skip).limit(limit),
+            Expense.countDocuments(query),
+        ]);
+        res.json({
+            expenses: expenses.map(e => e.toJSON()),
+            pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+        });
     } catch (err) { next(err); }
 };
 
@@ -86,6 +96,31 @@ exports.getExpense = async (req, res, next) => {
         const group = await verifyAccess(expense.groupId, req.user._id);
         if (!group) return res.status(403).json({ message: 'Access denied' });
 
+        res.json({ expense: expense.toJSON() });
+    } catch (err) { next(err); }
+};
+
+// ── PATCH /api/expenses/:id ───────────────────────────────────────
+exports.updateExpense = async (req, res, next) => {
+    try {
+        const expense = await Expense.findById(req.params.id);
+        if (!expense) return res.status(404).json({ message: 'Expense not found' });
+
+        const group = await verifyAccess(expense.groupId, req.user._id);
+        if (!group) return res.status(403).json({ message: 'Access denied' });
+
+        const isAdmin  = group.createdBy.toString() === req.user._id.toString();
+        const isAuthor = expense.createdBy?.toString() === req.user._id.toString();
+        if (!isAdmin && !isAuthor) {
+            return res.status(403).json({ message: 'Not allowed to edit this expense' });
+        }
+
+        const { description, amount, category } = req.body;
+        if (description !== undefined) expense.description = description.trim().slice(0, 200);
+        if (amount !== undefined)      expense.amount = Math.round(Number(amount) * 100) / 100;
+        if (category !== undefined)    expense.category = category;
+
+        await expense.save();
         res.json({ expense: expense.toJSON() });
     } catch (err) { next(err); }
 };

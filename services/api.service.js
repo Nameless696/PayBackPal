@@ -97,6 +97,10 @@ const ApiService = {
         return this._post('/expenses', expenseData);
     },
 
+    async updateExpense(id, updates) {
+        return this._patch(`/expenses/${id}`, updates);
+    },
+
     async deleteExpense(id) {
         return this._delete(`/expenses/${id}`);
     },
