@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayBackPal Test</title>
+</head>
+<body>
+    <h1>Testing Services</h1>
+    <div id="output"></div>
+    
+    <script src="services/storage.service.js"></script>
+    <script src="services/auth.service.js"></script>
+    <script src="services/group.service.js"></script>
+    <script src="services/expense.service.js"></script>
+    <script src="calculations.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        try {
+            output.innerHTML += '<p>✅ StorageService loaded: ' + (typeof StorageService !== 'undefined') + '</p>';
+            output.innerHTML += '<p>✅ AuthService loaded: ' + (typeof AuthService !== 'undefined') + '</p>';
+            output.innerHTML += '<p>✅ GroupService loaded: ' + (typeof GroupService !== 'undefined') + '</p>';
+            output.innerHTML += '<p>✅ ExpenseService loaded: ' + (typeof ExpenseService !== 'undefined') + '</p>';
+            output.innerHTML += '<p>✅ calculations loaded: ' + (typeof calculations !== 'undefined') + '</p>';
+            
+            // Test initialization
+            AuthService.init();
+            output.innerHTML += '<p>✅ AuthService initialized</p>';
+            
+            GroupService.init();
+            output.innerHTML += '<p>✅ GroupService initialized</p>';
+            
+            ExpenseService.init();
+            output.innerHTML += '<p>✅ ExpenseService initialized</p>';
+            
+            output.innerHTML += '<p style="color: green; font-weight: bold;">All services loaded successfully!</p>';
+        } catch (error) {
+            output.innerHTML += '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+            console.error(error);
+        }
+    </script>
+</body>
+</html>
