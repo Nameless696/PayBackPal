@@ -24,10 +24,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Init on mount — hydrate token + user from storage
   useEffect(() => {
     (async () => {
-      await ApiService.initToken();
-      const savedUser = await StorageService.getUser();
-      if (savedUser) setUser(savedUser);
-      setInitialized(true);
+      try {
+        await ApiService.initToken();
+        const savedUser = await StorageService.getUser();
+        if (savedUser) setUser(savedUser);
+      } catch (e) {
+        console.warn('Auth init failed:', e);
+      } finally {
+        setInitialized(true);
+      }
     })();
   }, []);
 

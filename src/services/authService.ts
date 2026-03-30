@@ -89,14 +89,17 @@ export async function logout(): Promise<void> {
 
 // ── Update profile ─────────────────────────────────────────────
 
-export async function updateProfile(updates: Partial<User>): Promise<{ success: boolean; user?: User }> {
+export async function updateProfile(updates: Partial<User>): Promise<{ success: boolean; user?: User; message?: string }> {
   try {
     const res = await ApiService.updateProfile(updates);
     return { success: true, user: res.user };
-  } catch (e: any) {
-    console.warn('[Auth] updateProfile failed:', e.message);
-    return { success: false };
+  } catch (apiErr: any) {
+    if (!isNetworkError(apiErr.message)) {
+      return { success: false, message: apiErr.message || 'Profile update failed' };
+    }
+    console.warn('[Auth] Backend unreachable, using local fallback for updates');
   }
+  return localUpdateProfile(updates);
 }
 
 // ── Local fallback helpers ────────────────────────────────────────
@@ -124,4 +127,14 @@ async function localSignup(name: string, email: string, password: string): Promi
 
   const user: User = { id: stableId(normalizedEmail), name: name.trim(), email: normalizedEmail, avatar: name.trim().charAt(0).toUpperCase() };
   return { success: true, user };
+}
+
+async function localUpdateProfile(updates: Partial<User>): Promise<{ success: boolean; user?: User; message?: string }> {
+  const existing = await StorageService.getUser();
+  if (!existing) return { success: false, message: 'No local user session found' };
+  
+  const updatedUser = { ...existing, ...updates };
+  // (AuthContext immediately writes updatedUser to Storage afterwards, but we can do it here too just in case)
+  await StorageService.saveUser(updatedUser);
+  return { success: true, user: updatedUser };
 }

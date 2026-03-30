@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Alert, TextInput, Image, Share } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -7,16 +7,19 @@ import { useModal } from '../../context/ModalContext';
 import { calculateGroupBalances, minimizeTransactions } from '../../utils/calculations';
 import { getCategoryIcon } from '../../constants/categories';
 import type { MainScreenProps } from '../../navigation/types';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 export default function GroupDetailsScreen({ navigation, route }: MainScreenProps<'GroupDetails'>) {
   const { groupId } = route.params;
   const { user } = useAuth();
-  const { groups, expenses, fmt, deleteGroup, removeMember, archiveGroup, addNotification } = useApp();
-  const { openAddExpense, openAddMember, openSettle, openEditExpense, showConfirm } = useModal();
+  const { groups, expenses, fmt, deleteGroup, updateGroup, removeMember, archiveGroup, addNotification } = useApp();
+  const { openAddExpense, openAddMember, openSettle, openEditExpense, openExpenseDetails, showConfirm } = useModal();
   const [showSimplify, setShowSimplify] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const group = groups.find(g => g.id === groupId);
   const groupExp = expenses.filter(e => e.groupId === groupId);
+  const filteredExp = groupExp.filter(e => e.description.toLowerCase().includes(searchQuery.toLowerCase()) || e.amount.toString().includes(searchQuery.toLowerCase()));
 
   if (!group) {
     return (
@@ -35,6 +38,15 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
   const simplified = minimizeTransactions(groupExp);
 
   const memberMap = Object.fromEntries(group.members.map(m => [m.id, m.name]));
+
+  async function handleEditImage() {
+    launchImageLibrary({ mediaType: 'photo', includeBase64: true, quality: 0.1, maxWidth: 400, maxHeight: 400 }, res => {
+      if (res.assets?.[0]?.base64) {
+        updateGroup(groupId, { iconType: 'image', icon: `data:image/jpeg;base64,${res.assets[0].base64}` });
+        addNotification('group_updated', `Group "${group!.name}" photo updated`);
+      }
+    });
+  }
 
   async function handleDeleteGroup() {
     const ok = await showConfirm(`Delete "${group!.name}"? This cannot be undone.`, { title: 'Delete Group', okLabel: 'Delete', danger: true });
@@ -64,10 +76,31 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
           <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
             <Text style={s.backTxt}>← Back</Text>
           </TouchableOpacity>
-          <Text style={s.groupIcon}>{group.iconType === 'emoji' ? group.icon : '👥'}</Text>
+          
+          <TouchableOpacity onPress={handleEditImage} style={{ alignSelf: 'center', position: 'relative' }}>
+            {group.iconType === 'image' && group.icon && group.icon.length > 5 ? (
+              <View style={{ marginBottom: 12, elevation: 8, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}>
+                 <Image source={{ uri: group.icon }} style={{ width: 90, height: 90, borderRadius: 24, borderWidth: 3, borderColor: 'rgba(255,255,255,0.8)' }} />
+              </View>
+            ) : (
+              <View style={{ width: 90, height: 90, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+                 <Text style={{ fontSize: 40 }}>{group.iconType === 'emoji' ? group.icon : '👥'}</Text>
+              </View>
+            )}
+            <View style={{ position: 'absolute', bottom: 6, right: -6, backgroundColor: '#0F0F1A', borderRadius: 16, width: 32, height: 32, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#4F9EFF' }}>
+              <Text style={{ fontSize: 14 }}>📷</Text>
+            </View>
+          </TouchableOpacity>
+
           <Text style={s.groupName}>{group.name}</Text>
           {group.description ? <Text style={s.groupDesc}>{group.description}</Text> : null}
           <Text style={s.memberCount}>{group.members.length} member{group.members.length !== 1 ? 's' : ''}</Text>
+
+          <TouchableOpacity onPress={() => Share.share({ message: group.id })} style={{ backgroundColor: 'rgba(255,255,255,0.1)', alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginBottom: 16 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 'bold' }}>
+              Invite Code: <Text style={{ color: '#fff', textDecorationLine: 'underline' }}>{group.id}</Text>
+            </Text>
+          </TouchableOpacity>
 
           {/* Stats */}
           <View style={s.statsRow}>
@@ -92,30 +125,50 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
           </TouchableOpacity>
         </View>
 
-        {/* Expenses */}
+        {/* Expenses Search */}
+        <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A2E', borderRadius: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: '#2D2B45' }}>
+            <Text style={{ fontSize: 16, marginRight: 8 }}>🔍</Text>
+            <TextInput 
+              style={{ flex: 1, color: '#F1F0FF', paddingVertical: 12 }} 
+              placeholder="Search expenses..." 
+              placeholderTextColor="#6B6890" 
+              value={searchQuery} 
+              onChangeText={setSearchQuery} 
+            />
+          </View>
+        </View>
+
+        {/* Activity Feed */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>Expenses ({groupExp.filter(e => !e.isSettlement).length})</Text>
-          {groupExp.filter(e => !e.isSettlement).length === 0 ? (
-            <View style={s.empty}><Text style={s.emptyTxt}>No expenses yet</Text></View>
-          ) : [...groupExp].filter(e => !e.isSettlement).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exp => (
-            <TouchableOpacity key={exp.id} style={s.expRow} onPress={() => openEditExpense(exp.id)}>
-              <Text style={s.expIcon}>{getCategoryIcon(exp.category, exp.customCategoryIcon)}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={s.expDesc}>{exp.description}</Text>
-                <Text style={s.expMeta}>Paid by {memberMap[exp.paidBy] ?? exp.paidBy} · {new Date(exp.date).toLocaleDateString()}</Text>
-              </View>
-              <Text style={s.expAmt}>{fmt(exp.amount)}</Text>
-            </TouchableOpacity>
-          ))}
-          {groupExp.filter(e => e.isSettlement).map(exp => (
-            <View key={exp.id} style={[s.expRow, { opacity: 0.6 }]}>
-              <Text style={s.expIcon}>✅</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={s.expDesc}>{exp.description}</Text>
-                <Text style={s.expMeta}>{new Date(exp.date).toLocaleDateString()}</Text>
-              </View>
-              <Text style={[s.expAmt, { color: '#22C55E' }]}>{fmt(exp.amount)}</Text>
-            </View>
+          <Text style={s.sectionTitle}>Activity Feed ({filteredExp.length})</Text>
+          {filteredExp.length === 0 ? (
+            <View style={s.empty}><Text style={s.emptyTxt}>{searchQuery ? 'No matching activity' : 'No activity yet'}</Text></View>
+          ) : [...filteredExp].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exp => (
+            exp.isSettlement ? (
+              <TouchableOpacity key={exp.id} style={[s.expRow, { opacity: 0.85, borderColor: '#22C55E' }]} onPress={() => openExpenseDetails(exp.id)}>
+                <Text style={s.expIcon}>💸</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.expDesc}>{exp.description || 'Settlement'}</Text>
+                  <Text style={s.expMeta}>{new Date(exp.date).toLocaleDateString()} · {exp.comments?.length || 0}💬</Text>
+                </View>
+                <Text style={[s.expAmt, { color: '#22C55E', fontWeight: '900' }]}>{fmt(exp.amount)}</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity key={exp.id} style={s.expRow} onPress={() => openExpenseDetails(exp.id)}>
+                <Text style={s.expIcon}>{getCategoryIcon(exp.category, exp.customCategoryIcon)}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.expDesc}>{exp.description}</Text>
+                  <Text style={s.expMeta}>Paid by {memberMap[exp.paidBy] ?? exp.paidBy} · {new Date(exp.date).toLocaleDateString()} · {exp.comments?.length || 0}💬</Text>
+                </View>
+                <Text style={s.expAmt}>{fmt(exp.amount)}</Text>
+                {exp.paidBy === userId && (
+                  <TouchableOpacity onPress={() => openEditExpense(exp.id)} style={{ padding: 4, marginLeft: 8 }}>
+                    <Text style={{ fontSize: 16 }}>✏️</Text>
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+            )
           ))}
         </View>
 

@@ -15,6 +15,8 @@ interface ModalContextValue {
   closeSettle:         () => void;
   openEditExpense:     (expenseId: string) => void;
   closeEditExpense:    () => void;
+  openExpenseDetails:  (expenseId: string) => void;
+  closeExpenseDetails: () => void;
   openEditProfile:     () => void;
   closeEditProfile:    () => void;
   openReceiptLightbox: (uri: string) => void;
@@ -33,6 +35,7 @@ interface ModalContextValue {
   addMemberOpen:       boolean;
   settleOpen:          boolean;
   editExpenseOpen:     boolean;
+  expenseDetailsOpen:  boolean;
   editProfileOpen:     boolean;
   receiptLightboxOpen: boolean;
 
@@ -49,6 +52,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
   const [addMemberOpen,       setAddMemberOpen]       = useState(false);
   const [settleOpen,          setSettleOpen]          = useState(false);
   const [editExpenseOpen,     setEditExpenseOpen]     = useState(false);
+  const [expenseDetailsOpen,  setExpenseDetailsOpen]  = useState(false);
   const [editProfileOpen,     setEditProfileOpen]     = useState(false);
   const [receiptLightboxOpen, setReceiptLightboxOpen] = useState(false);
 
@@ -91,7 +95,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value: ModalContextValue = {
-    addExpenseOpen, createGroupOpen, addMemberOpen, settleOpen, editExpenseOpen, editProfileOpen, receiptLightboxOpen,
+    addExpenseOpen, createGroupOpen, addMemberOpen, settleOpen, editExpenseOpen, expenseDetailsOpen, editProfileOpen, receiptLightboxOpen,
     addExpenseGroupId, addMemberGroupId, settleGroupId, editExpenseId, receiptUri,
 
     openAddExpense:      (gId?) => { setAddExpenseGroupId(gId ?? null); setAddExpenseOpen(true); },
@@ -104,6 +108,8 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
     closeSettle:         () => setSettleOpen(false),
     openEditExpense:     (id) => { setEditExpenseId(id); setEditExpenseOpen(true); },
     closeEditExpense:    () => setEditExpenseOpen(false),
+    openExpenseDetails:  (id) => { setEditExpenseId(id); setExpenseDetailsOpen(true); },
+    closeExpenseDetails: () => setExpenseDetailsOpen(false),
     openEditProfile:     () => setEditProfileOpen(true),
     closeEditProfile:    () => setEditProfileOpen(false),
     openReceiptLightbox: (uri) => { setReceiptUri(uri); setReceiptLightboxOpen(true); },

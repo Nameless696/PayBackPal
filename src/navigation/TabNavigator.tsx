@@ -52,7 +52,7 @@ export default function TabNavigator() {
         component={EmptyScreen}
         options={{
           tabBarLabel: '',
-          tabBarButton: () => <FabButton onPress={openAddExpense} />,
+          tabBarButton: () => <FabButton onPress={() => openAddExpense()} />,
         }}
         listeners={{ tabPress: (e) => e.preventDefault() }}
       />
@@ -81,12 +81,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     height: 64,
     paddingTop: 8,
+    position: 'absolute', // Ensures absolute positioning behavior works flawlessly
+    bottom: 0,
+    width: '100%',
   },
   fab: {
     width: 56, height: 56, borderRadius: 28,
     backgroundColor: '#6C63FF',
     justifyContent: 'center', alignItems: 'center',
-    marginBottom: 8,
+    position: 'absolute',
+    top: -24, // Pulls the FAB perfectly out of the tab bar
+    left: '50%',
+    marginLeft: -28, // Perfect horizontal centering
     shadowColor: '#6C63FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 8,
     elevation: 8,
   },

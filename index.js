@@ -2,6 +2,7 @@
  * @format
  */
 
+import 'react-native-gesture-handler';
 import './global.css';
 import { AppRegistry } from 'react-native';
 import { Buffer } from 'buffer';

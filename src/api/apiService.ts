@@ -27,6 +27,21 @@ function _headers(): Record<string, string> {
 
 // ── HTTP helpers ─────────────────────────────────────────────────
 
+const TIMEOUT_MS = 60000; // Increased to 60s to allow Render free-tier cold starts!
+
+async function fetchWithTimeout(url: string, options: RequestInit) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
 async function _handle(res: Response): Promise<any> {
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
@@ -34,26 +49,26 @@ async function _handle(res: Response): Promise<any> {
 }
 
 async function _get(endpoint: string): Promise<any> {
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, { headers: _headers() });
+  const res = await fetchWithTimeout(`${API_BASE_URL}${endpoint}`, { headers: _headers() });
   return _handle(res);
 }
 
 async function _post(endpoint: string, body: unknown): Promise<any> {
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const res = await fetchWithTimeout(`${API_BASE_URL}${endpoint}`, {
     method: 'POST', headers: _headers(), body: JSON.stringify(body),
   });
   return _handle(res);
 }
 
 async function _patch(endpoint: string, body: unknown): Promise<any> {
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const res = await fetchWithTimeout(`${API_BASE_URL}${endpoint}`, {
     method: 'PATCH', headers: _headers(), body: JSON.stringify(body),
   });
   return _handle(res);
 }
 
 async function _delete(endpoint: string): Promise<any> {
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, { method: 'DELETE', headers: _headers() });
+  const res = await fetchWithTimeout(`${API_BASE_URL}${endpoint}`, { method: 'DELETE', headers: _headers() });
   return _handle(res);
 }
 

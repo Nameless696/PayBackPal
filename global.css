@@ -1,3 +1,34 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: 99 102 241;
+    --primary-mid: 129 140 248;
+    --success: 34 197 94;
+    --error: 239 68 68;
+    --warning: 245 158 11;
+    --bg-body: 248 250 252;
+    --bg-card: 255 255 255;
+    --bg-surface: 241 245 249;
+    --text-1: 15 23 42;
+    --text-2: 51 65 85;
+    --text-muted: 100 116 139;
+    --border: 226 232 240;
+  }
+  .dark {
+    --primary: 99 102 241;
+    --primary-mid: 129 140 248;
+    --success: 34 197 94;
+    --error: 239 68 68;
+    --warning: 245 158 11;
+    --bg-body: 9 9 11;
+    --bg-card: 24 24 27;
+    --bg-surface: 39 39 42;
+    --text-1: 250 250 250;
+    --text-2: 161 161 170;
+    --text-muted: 113 113 122;
+    --border: 39 39 42;
+  }
+}

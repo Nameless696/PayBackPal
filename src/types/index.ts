@@ -44,6 +44,12 @@ export interface Expense {
   method?: string;
   customCategoryName?: string;
   customCategoryIcon?: string;
+  comments?: {
+    id: string;
+    userId: string;
+    text: string;
+    timestamp: string;
+  }[];
 }
 
 export interface Notification {

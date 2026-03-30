@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, SafeAreaView } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, SafeAreaView, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../context/AuthContext';
@@ -25,8 +25,12 @@ export default function SettingsScreen() {
       <ScrollView>
         {/* Profile */}
         <View className="m-4 bg-bg-card rounded-2xl p-4 flex-row items-center border border-border">
-          <View className="w-[52px] h-[52px] rounded-full bg-primary justify-center items-center">
-            <Text className="text-white text-[22px] font-bold">{user?.avatar ?? '?'}</Text>
+          <View className="w-[52px] h-[52px] rounded-full bg-primary justify-center items-center overflow-hidden" style={{ borderWidth: 2, borderColor: '#D8D5F5' }}>
+            {user?.avatar && user.avatar.length > 5 ? (
+              <Image source={{ uri: user.avatar }} style={{ width: '100%', height: '100%' }} />
+            ) : (
+              <Text className="text-white text-[22px] font-bold">{user?.name ? user.name.charAt(0).toUpperCase() : '?'}</Text>
+            )}
           </View>
           <View className="flex-1 ml-[14px]">
             <Text className="text-text-1 text-base font-bold">{user?.name}</Text>
@@ -83,6 +87,7 @@ export default function SettingsScreen() {
           {[
             { label: 'Receipt Storage', icon: '🧾', onPress: () => navigation.navigate('ReceiptStorage') },
             { label: 'Reports',         icon: '📊', onPress: () => navigation.navigate('Reports') },
+            { label: 'Change Password', icon: '🔐', onPress: () => Alert.alert('Restricted', 'Changing passwords is bound to the backend. In local MVP mode, please create a new physical account.') },
           ].map(({ label, icon, onPress }) => (
             <TouchableOpacity key={label} className="flex-row items-center py-3 border-t border-border" onPress={onPress}>
               <Text className="text-xl mr-3">{icon}</Text>

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Image } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -36,9 +36,13 @@ export default function DashboardScreen() {
         {/* ── Hero card ─────────────────────────────── */}
         <LinearGradient colors={['#6C63FF', '#4F9EFF']} style={{ padding: 24, paddingBottom: 32 }}>
           <View className="flex-row justify-between items-center mb-4">
-            <View className="w-10 h-10 rounded-full justify-center items-center"
+            <View className="w-10 h-10 rounded-full justify-center items-center overflow-hidden"
               style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
-              <Text className="text-white text-lg font-bold">{user?.avatar ?? '?'}</Text>
+              {user?.avatar && user.avatar.length > 5 ? (
+                <Image source={{ uri: user.avatar }} style={{ width: '100%', height: '100%' }} />
+              ) : (
+                <Text className="text-white text-lg font-bold">{user?.name ? user.name.charAt(0).toUpperCase() : '?'}</Text>
+              )}
             </View>
             {isSyncing && <ActivityIndicator color="#FFF" size="small" />}
           </View>
@@ -83,7 +87,7 @@ export default function DashboardScreen() {
         <View className="px-4 pb-4">
           <View className="flex-row justify-between items-center mb-3">
             <Text className="text-text-1 text-[17px] font-bold">Your Groups</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Tabs' as any)}>
+            <TouchableOpacity onPress={() => navigation.navigate('Groups' as any)}>
               <Text className="text-primary text-[13px] font-semibold">See All</Text>
             </TouchableOpacity>
           </View>
@@ -96,7 +100,13 @@ export default function DashboardScreen() {
               key={group.id}
               className="bg-bg-card rounded-xl p-[14px] flex-row items-center mb-2 border border-border"
               onPress={() => navigation.navigate('GroupDetails', { groupId: group.id })}>
-              <Text className="text-2xl mr-3">{group.iconType === 'emoji' ? group.icon : '👥'}</Text>
+              <View className="w-10 h-10 bg-primary/20 rounded-lg justify-center items-center overflow-hidden mr-3">
+                {group.iconType === 'image' && group.icon && group.icon.length > 5 ? (
+                  <Image source={{ uri: group.icon }} style={{ width: '100%', height: '100%' }} />
+                ) : (
+                  <Text className="text-xl">{group.icon || '👥'}</Text>
+                )}
+              </View>
               <View className="flex-1">
                 <Text className="text-text-1 text-[15px] font-semibold">{group.name}</Text>
                 <Text className="text-text-muted text-xs mt-0.5">

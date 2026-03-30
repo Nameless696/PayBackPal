@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { LayoutAnimation, Platform, UIManager } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import ApiService from '../api/apiService';
 import StorageService from '../services/storageService';
 import { currencies, DEFAULT_CURRENCY } from '../constants/currencies';
@@ -8,6 +10,10 @@ import type { Group, Expense, Notification, Member, User } from '../types';
 
 function makeId(prefix = 'id'): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 // ── Context type ──────────────────────────────────────────────────
@@ -32,6 +38,7 @@ interface AppContextValue {
   deleteExpense:      (id: string) => Promise<void>;
   settleDebt:         (from: string, to: string, amount: number, method: string, groupId: string) => Promise<Expense>;
   recordContribution: (memberId: string, memberName: string, amount: number, groupId: string) => Promise<Expense>;
+  addExpenseComment:  (expenseId: string, text: string, userId: string) => Promise<void>;
 
   // Notification actions
   addNotification:   (type: string, message: string) => void;
@@ -58,6 +65,8 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const { colorScheme, setColorScheme } = useColorScheme();
+  
   const [groups,        setGroups]        = useState<Group[]>([]);
   const [expenses,      setExpenses]      = useState<Expense[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -82,6 +91,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setNotifications(n);
       setCurrencyState(cur);
       setIsDark(dark);
+      setColorScheme(dark ? 'dark' : 'light'); // Sync NativeWind
       setEmailAlertsState(ea);
     })();
   }, []);
@@ -109,13 +119,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // ── Notification base actions ────────────────────────────────────
+
+  const addNotification = useCallback((type: string, message: string) => {
+    const notif: Notification = { id: makeId('n'), type, message, read: false, timestamp: new Date().toISOString() };
+    setNotifications(prev => {
+      const updated = [notif, ...prev];
+      StorageService.saveNotifications(updated);
+      return updated;
+    });
+  }, []);
+
   // ── Group actions ────────────────────────────────────────────────
 
   const createGroup = useCallback(async (data: Omit<Group, 'id' | 'createdAt'>): Promise<Group> => {
     const newGroup: Group = { ...data, id: makeId('g'), createdAt: new Date().toISOString() };
     const updated = [...groups, newGroup];
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setGroups(updated);
     await StorageService.saveGroups(updated);
+    addNotification('group_updated', `You created group "${newGroup.name}"`);
     ApiService.createGroup(newGroup).then(res => {
       if (res?.group?._id || res?._id) {
         const serverId = res.group?._id ?? res._id;
@@ -123,9 +146,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }).catch(e => console.warn('[Group] Create sync failed:', e.message));
     return newGroup;
-  }, [groups]);
+  }, [groups, addNotification]);
 
   const updateGroup = useCallback(async (id: string, updates: Partial<Group>) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const updated = groups.map(g => g.id === id ? { ...g, ...updates } : g);
     setGroups(updated);
     await StorageService.saveGroups(updated);
@@ -133,11 +157,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [groups]);
 
   const deleteGroup = useCallback(async (id: string) => {
+    const target = groups.find(g => g.id === id);
     const updated = groups.filter(g => g.id !== id);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setGroups(updated);
     await StorageService.saveGroups(updated);
+    if (target) addNotification('group_updated', `Group "${target.name}" was deleted`);
     ApiService.deleteGroup(id).catch(e => console.warn('[Group] Delete sync failed:', e.message));
-  }, [groups]);
+  }, [groups, addNotification]);
 
   const archiveGroup = useCallback(async (groupId: string, archived: boolean) => {
     await updateGroup(groupId, { isArchived: archived });
@@ -152,8 +179,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     setGroups(updated);
     await StorageService.saveGroups(updated);
+    addNotification('member_added', `${member.name} joined the group`);
     ApiService.addMember(groupId, member).catch(e => console.warn('[Member] Add sync failed:', e.message));
-  }, [groups]);
+  }, [groups, addNotification]);
 
   const removeMember = useCallback(async (groupId: string, memberId: string) => {
     const updated = groups.map(g =>
@@ -169,13 +197,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addExpense = useCallback(async (data: Omit<Expense, 'id'>): Promise<Expense> => {
     const newExpense: Expense = { ...data, id: makeId('e') };
     const updated = [...expenses, newExpense];
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpenses(updated);
     await StorageService.saveExpenses(updated);
+    addNotification('expense_added', `Added expense: ${newExpense.description} for ${newExpense.amount}`);
     ApiService.createExpense(newExpense).catch(e => console.warn('[Expense] Add sync failed:', e.message));
     return newExpense;
-  }, [expenses]);
+  }, [expenses, addNotification]);
 
   const updateExpense = useCallback(async (id: string, updates: Partial<Expense>) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     const updated = expenses.map(e => e.id === id ? { ...e, ...updates } : e);
     setExpenses(updated);
     await StorageService.saveExpenses(updated);
@@ -183,11 +214,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [expenses]);
 
   const deleteExpense = useCallback(async (id: string) => {
+    const target = expenses.find(e => e.id === id);
     const updated = expenses.filter(e => e.id !== id);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpenses(updated);
     await StorageService.saveExpenses(updated);
+    if (target) addNotification('expense_deleted', `Deleted expense: ${target.description}`);
     ApiService.deleteExpense(id).catch(e => console.warn('[Expense] Delete sync failed:', e.message));
-  }, [expenses]);
+  }, [expenses, addNotification]);
 
   const settleDebt = useCallback(async (from: string, to: string, amount: number, method: string, groupId: string): Promise<Expense> => {
     return addExpense({
@@ -205,16 +239,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, [addExpense]);
 
-  // ── Notification actions ─────────────────────────────────────────
-
-  const addNotification = useCallback((type: string, message: string) => {
-    const notif: Notification = { id: makeId('n'), type, message, read: false, timestamp: new Date().toISOString() };
-    setNotifications(prev => {
-      const updated = [notif, ...prev];
-      StorageService.saveNotifications(updated);
-      return updated;
+  const addExpenseComment = useCallback(async (expenseId: string, text: string, userId: string) => {
+    const updated = expenses.map(e => {
+      if (e.id !== expenseId) return e;
+      const newComment = { id: makeId('c'), userId, text, timestamp: new Date().toISOString() };
+      return { ...e, comments: [...(e.comments || []), newComment] };
     });
-  }, []);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpenses(updated);
+    await StorageService.saveExpenses(updated);
+    // Fire-and-forget sync to backend
+    const target = updated.find(e => e.id === expenseId);
+    if (target) ApiService.updateExpense(expenseId, { comments: target.comments }).catch(() => {});
+  }, [expenses]);
+
+  // ── Notification actions ─────────────────────────────────────────
 
   const markNotifRead = useCallback((id: string) => {
     setNotifications(prev => {
@@ -244,8 +283,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setIsDark(prev => { StorageService.setSetting('isDark', !prev); return !prev; });
-  }, []);
+    setIsDark(prev => {
+      const next = !prev;
+      StorageService.setSetting('isDark', next);
+      setColorScheme(next ? 'dark' : 'light');
+      return next;
+    });
+  }, [setColorScheme]);
 
   const setEmailAlerts = useCallback((val: boolean) => {
     setEmailAlertsState(val);
@@ -256,7 +300,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{
       groups, expenses, notifications, isSyncing,
       createGroup, updateGroup, deleteGroup, addMember, removeMember, archiveGroup,
-      addExpense, updateExpense, deleteExpense, settleDebt, recordContribution,
+      addExpense, updateExpense, deleteExpense, settleDebt, recordContribution, addExpenseComment,
       addNotification, markNotifRead, markAllNotifsRead, unreadCount,
       syncAll,
       currency, currencySymbol, setCurrency,
