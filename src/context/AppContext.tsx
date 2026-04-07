@@ -111,6 +111,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const syncAll = useCallback(async (user: User) => {
     setIsSyncing(true);
+    // Re-apply OS color scheme so pull-to-refresh also syncs theme
+    setColorScheme(Appearance.getColorScheme() === 'light' ? 'light' : 'dark');
     try {
       const sync = await ApiService.syncAll();
       const g = sync.groups || [];
@@ -125,7 +127,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsSyncing(false);
     }
-  }, []);
+  }, [setColorScheme]);
 
   // ── Notification base actions ────────────────────────────────────
 

@@ -4,7 +4,6 @@ import LinearGradient from 'react-native-linear-gradient';
 import { Camera } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
 import { useThemeColors } from '../../hooks/useThemeColors';
-import GlowButton from '../../components/ui/GlowButton';
 import { useAuth } from '../../context/AuthContext';
 import { useModal } from '../../context/ModalContext';
 import { calculateGroupBalances, minimizeTransactions } from '../../utils/calculations';
@@ -36,7 +35,9 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
     );
   }
 
-  const userId = user?.id ?? '';
+  const userId  = user?.id ?? '';
+  const isAdmin  = group.createdBy === userId ||
+                   group.members.some(m => m.id === userId && (m as any).role === 'admin');
   const balances = calculateGroupBalances(groupExp, userId);
   const totalAmt = groupExp.filter(e => !e.isSettlement).reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const simplified = minimizeTransactions(groupExp);
@@ -65,6 +66,16 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
     navigation.goBack();
   }
 
+  async function handleLeaveGroup() {
+    const ok = await showConfirm(
+      'Remove yourself from this group? You can rejoin using the invite code.',
+      { title: 'Leave Group', okLabel: 'Leave', danger: false }
+    );
+    if (!ok) return;
+    await removeMember(groupId, userId);
+    navigation.goBack();
+  }
+
   async function handleRemoveMember(memberId: string, memberName: string) {
     const ok = await showConfirm(`Remove ${memberName} from this group?`, { title: 'Remove Member', okLabel: 'Remove', danger: true });
     if (!ok) return;
@@ -81,20 +92,34 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
             <Text style={s.backTxt}>← Back</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity onPress={handleEditImage} style={{ alignSelf: 'center', position: 'relative' }}>
-            {group.iconType === 'image' && group.icon && group.icon.length > 5 ? (
-              <View style={{ marginBottom: 12, elevation: 8, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}>
-                 <Image source={{ uri: group.icon }} style={{ width: 90, height: 90, borderRadius: 24, borderWidth: 3, borderColor: 'rgba(255,255,255,0.8)' }} />
+          {isAdmin ? (
+            <TouchableOpacity onPress={handleEditImage} style={{ alignSelf: 'center', position: 'relative' }}>
+              {group.iconType === 'image' && group.icon && group.icon.length > 5 ? (
+                <View style={{ marginBottom: 12, elevation: 8, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}>
+                   <Image source={{ uri: group.icon }} style={{ width: 90, height: 90, borderRadius: 24, borderWidth: 3, borderColor: 'rgba(255,255,255,0.8)' }} />
+                </View>
+              ) : (
+                <View style={{ width: 90, height: 90, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+                   <Text style={{ fontSize: 40 }}>{group.iconType === 'emoji' ? group.icon : '👥'}</Text>
+                </View>
+              )}
+              <View style={{ position: 'absolute', bottom: 6, right: -6, backgroundColor: '#0F0F1A', borderRadius: 16, width: 32, height: 32, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#4F9EFF' }}>
+                <Camera color="#4F9EFF" size={14} />
               </View>
-            ) : (
-              <View style={{ width: 90, height: 90, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
-                 <Text style={{ fontSize: 40 }}>{group.iconType === 'emoji' ? group.icon : '👥'}</Text>
-              </View>
-            )}
-            <View style={{ position: 'absolute', bottom: 6, right: -6, backgroundColor: '#0F0F1A', borderRadius: 16, width: 32, height: 32, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#4F9EFF' }}>
-              <Camera color="#4F9EFF" size={14} />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ alignSelf: 'center' }}>
+              {group.iconType === 'image' && group.icon && group.icon.length > 5 ? (
+                <View style={{ marginBottom: 12 }}>
+                  <Image source={{ uri: group.icon }} style={{ width: 90, height: 90, borderRadius: 24, borderWidth: 3, borderColor: 'rgba(255,255,255,0.8)' }} />
+                </View>
+              ) : (
+                <View style={{ width: 90, height: 90, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+                  <Text style={{ fontSize: 40 }}>{group.iconType === 'emoji' ? group.icon : '👥'}</Text>
+                </View>
+              )}
             </View>
-          </TouchableOpacity>
+          )}
 
           <Text style={s.groupName}>{group.name}</Text>
           {group.description ? <Text style={s.groupDesc}>{group.description}</Text> : null}
@@ -116,11 +141,17 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
           </View>
         </LinearGradient>
 
-        {/* Action row */}
+        {/* Action row — all members can add expenses, invite, and settle */}
         <View style={s.actionRow}>
-          <GlowButton label="+ Expense" onPress={() => openAddExpense(groupId)} style={{ flex: 1 }} />
-          <GlowButton label="+ Member"  onPress={() => openAddMember(groupId)}  style={{ flex: 1 }} />
-          <GlowButton label="⚖️ Settle" onPress={() => openSettle(groupId)}     style={{ flex: 1 }} />
+          <TouchableOpacity style={s.actionBtn} onPress={() => openAddExpense(groupId)}>
+            <Text style={s.actionTxt}>+ Expense</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.actionBtn} onPress={() => openAddMember(groupId)}>
+            <Text style={s.actionTxt}>+ Member</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[s.actionBtn, s.actionBtnGhost]} onPress={() => openSettle(groupId)}>
+            <Text style={s.actionTxtGhost}>⚖️ Settle</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Expenses Search */}
@@ -179,12 +210,24 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
                 <Text style={s.memberAvatarTxt}>{member.name.charAt(0).toUpperCase()}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[s.memberName, { color: C.text1 }]}>{member.name}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={[s.memberName, { color: C.text1 }]}>{member.name}</Text>
+                  {(member.id === group.createdBy || (member as any).role === 'admin') && (
+                    <View style={s.adminBadge}><Text style={s.adminBadgeTxt}>Admin</Text></View>
+                  )}
+                </View>
                 <Text style={[s.memberEmail, { color: C.muted }]}>{member.email}</Text>
               </View>
-              {member.id !== userId && (
+              {/* Admin can remove any other member */}
+              {isAdmin && member.id !== userId && (
                 <TouchableOpacity onPress={() => handleRemoveMember(member.id, member.name)}>
                   <Text style={{ color: '#EF4444', fontSize: 13 }}>Remove</Text>
+                </TouchableOpacity>
+              )}
+              {/* Any member can leave — shows on their own row */}
+              {member.id === userId && (
+                <TouchableOpacity onPress={handleLeaveGroup}>
+                  <Text style={{ color: '#F59E0B', fontSize: 13 }}>Leave</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -210,15 +253,17 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
           )}
         </View>
 
-        {/* Danger zone */}
-        <View style={[s.section, { paddingBottom: 32 }]}>
-          <TouchableOpacity style={s.archiveBtn} onPress={handleArchive}>
-            <Text style={s.archiveTxt}>{group.isArchived ? 'Unarchive Group' : 'Archive Group'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.deleteBtn} onPress={handleDeleteGroup}>
-            <Text style={s.deleteTxt}>Delete Group</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Danger zone — admin only */}
+        {isAdmin && (
+          <View style={[s.section, { paddingBottom: 32 }]}>
+            <TouchableOpacity style={s.archiveBtn} onPress={handleArchive}>
+              <Text style={s.archiveTxt}>{group.isArchived ? 'Unarchive Group' : 'Archive Group'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.deleteBtn} onPress={handleDeleteGroup}>
+              <Text style={s.deleteTxt}>Delete Group</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -266,4 +311,6 @@ const s = StyleSheet.create({
   archiveTxt: { color: '#6C63FF', fontWeight: '600' },
   deleteBtn: { borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   deleteTxt: { color: '#EF4444', fontWeight: '600' },
+  adminBadge: { backgroundColor: '#6C63FF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  adminBadgeTxt: { color: '#FFF', fontSize: 10, fontWeight: '700' },
 });
