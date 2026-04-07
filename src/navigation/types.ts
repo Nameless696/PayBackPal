@@ -11,6 +11,7 @@ export type AuthStackParamList = {
   Login:         undefined;
   Signup:        undefined;
   VerifyEmail:   { email: string };
+  ForgotPassword: undefined;
 };
 
 // ── Main stack (wraps tabs + sub-screens) ────────────────────────
@@ -20,6 +21,8 @@ export type MainStackParamList = {
   GroupDetails:   { groupId: string };
   ReceiptStorage: undefined;
   Reports:        undefined;
+  Settings:       undefined;
+  ChangePassword: undefined;
 };
 
 // ── Bottom tab navigator ─────────────────────────────────────────
@@ -29,7 +32,7 @@ export type TabParamList = {
   Groups:   undefined;
   FAB:      undefined;
   Alerts:   undefined;
-  Settings: undefined;
+  Profile:  undefined;
 };
 
 // ── Screen prop helpers ───────────────────────────────────────────

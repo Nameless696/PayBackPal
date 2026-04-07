@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, Image, KeyboardAvoidin
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetTextInput, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import Toast from 'react-native-toast-message';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { Camera } from 'lucide-react-native';
 
 import { useModal } from '../context/ModalContext';
 import { useApp } from '../context/AppContext';
@@ -43,8 +44,14 @@ export default function GlobalSheets() {
   const [expAmount, setExpAmount] = useState('');
   const [expDesc, setExpDesc] = useState('');
   const [expGroup, setExpGroup] = useState('');
+  const [expPaidBy, setExpPaidBy] = useState('');
   const [expReceipt, setExpReceipt] = useState<string | null>(null);
   const [expCategory, setExpCategory] = useState('general');
+
+  const activeExpenseGroupObj = useMemo(() => {
+    const targetGroup = expGroup || (modalCtx.addExpenseGroupId ?? groups[0]?.id);
+    return groups.find(g => g.id === targetGroup);
+  }, [groups, expGroup, modalCtx.addExpenseGroupId]);
 
   const selectReceipt = () => {
     launchImageLibrary({ mediaType: 'photo', includeBase64: true, quality: 0.8, maxWidth: 1000, maxHeight: 1000 }, res => {
@@ -62,15 +69,15 @@ export default function GlobalSheets() {
       description: expDesc,
       category: expCategory,
       groupId: targetGroup,
-      paidBy: user?.id || '',
-      splitAmong: [],
+      paidBy: expPaidBy || user?.id || '',
+      splitAmong: activeExpenseGroupObj ? activeExpenseGroupObj.members.map(m => m.id) : [],
       date: new Date().toISOString(),
       receipt: expReceipt || undefined
     });
     
     Toast.show({ type: 'success', text1: 'Expense Added!' });
     modalCtx.closeAddExpense();
-    setExpAmount(''); setExpDesc(''); setExpReceipt(null); setExpCategory('general'); setExpGroup('');
+    setExpAmount(''); setExpDesc(''); setExpReceipt(null); setExpCategory('general'); setExpGroup(''); setExpPaidBy('');
   };
 
   // -- Create Group State --
@@ -141,7 +148,8 @@ export default function GlobalSheets() {
   };
 
   const submitProfile = async () => {
-    const success = await updateProfile({ name: profName, email: profEmail, avatar: profAvatar });
+    const payload = { name: profName, email: profEmail, avatar: profAvatar };
+    const success = await updateProfile(payload as any);
     if (success) {
       Toast.show({ type: 'success', text1: 'Profile Updated!' });
       modalCtx.closeEditProfile();
@@ -197,6 +205,19 @@ export default function GlobalSheets() {
             </View>
           </View>
           
+          <Text style={{color: '#B8B5D1', marginBottom: 12, fontSize: 13, fontWeight: 'bold'}}>Paid By</Text>
+          <View style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              {activeExpenseGroupObj?.members.map(m => (
+                <TouchableOpacity key={m.id} onPress={() => setExpPaidBy(m.id)} style={[styles.catTag, (expPaidBy || user?.id) === m.id && styles.catTagActive, { marginBottom: 8 }]}>
+                  <Text style={[styles.catTagTxt, (expPaidBy || user?.id) === m.id && styles.catTagTxtActive]}>
+                    👤 {m.id === user?.id ? 'You' : m.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          
           <TouchableOpacity style={styles.imgPickerBtn} onPress={selectReceipt}>
             {expReceipt ? <Image source={{ uri: expReceipt }} style={{ width: '100%', height: 120, borderRadius: 12 }} /> : <Text style={styles.imgPickerTxt}>📷 Attach Receipt</Text>}
           </TouchableOpacity>
@@ -215,7 +236,7 @@ export default function GlobalSheets() {
               {grpIcon ? (
                 <Image source={{ uri: grpIcon }} style={{ width: 64, height: 64, borderRadius: 16 }} />
               ) : (
-                <Text style={{ fontSize: 24 }}>📷</Text>
+                <Camera color="#6C63FF" size={26} />
               )}
             </TouchableOpacity>
             <Text style={{ color: '#6B6890', marginLeft: 16, flex: 1 }}>Tap to upload a custom group image. (Optional)</Text>
@@ -306,7 +327,7 @@ export default function GlobalSheets() {
               ) : (
                 <View style={{ marginBottom: 20 }}>
                   {activeExpense.comments.map(c => (
-                    <View key={c.id} style={{ backgroundColor: '#0F0F1A', padding: 12, borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#2D2B45' }}>
+                    <View key={c.id} style={{ backgroundColor: 'transparent', padding: 12, borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#2D2B45' }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
                         <Text style={{ color: '#6C63FF', fontWeight: 'bold', fontSize: 13 }}>{c.userId}</Text>
                         <Text style={{ color: '#6B6890', fontSize: 11 }}>{new Date(c.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
@@ -359,7 +380,7 @@ const styles = StyleSheet.create({
   content: { padding: 24 },
   title: { color: '#FFF', fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
   input: {
-    backgroundColor: '#0F0F1A',
+    backgroundColor: 'transparent',
     color: '#FFF',
     padding: 16,
     borderRadius: 12,
@@ -380,7 +401,7 @@ const styles = StyleSheet.create({
   lightboxClose: { position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10 },
   lightboxCloseText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
   lightboxImg: { width: '100%', height: '80%', alignSelf: 'center', marginTop: 80 },
-  imgPickerBtn: { backgroundColor: '#1A1A2E', borderWidth: 1, borderColor: '#6C63FF', borderStyle: 'dashed', borderRadius: 12, height: 120, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  imgPickerBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#6C63FF', borderStyle: 'dashed', borderRadius: 12, height: 120, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
   imgPickerTxt: { color: '#6C63FF', fontWeight: 'bold' },
   avatarPicker: { alignSelf: 'center', alignItems: 'center', marginBottom: 20 },
   avatarPickerTxt: { color: '#FFF', fontSize: 32, fontWeight: 'bold', width: 80, height: 80, borderRadius: 40, backgroundColor: '#6C63FF', textAlign: 'center', textAlignVertical: 'center', lineHeight: 80 },

@@ -13,6 +13,7 @@ interface AuthContextValue {
   resendCode:   (email: string) => Promise<void>;
   logout:       () => Promise<void>;
   updateProfile:(updates: Partial<User>) => Promise<boolean>;
+  deleteAccount:() => Promise<{ success: boolean; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -67,6 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    const result = await AuthService.deleteAccount();
+    if (result.success) setUser(null);
+    return result;
+  }, []);
+
   const updateProfile = useCallback(async (updates: Partial<User>): Promise<boolean> => {
     const result = await AuthService.updateProfile(updates);
     if (result.success && result.user) {
@@ -77,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isInitialized, login, signup, verifyEmail, resendCode, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, isInitialized, login, signup, verifyEmail, resendCode, logout, updateProfile, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );

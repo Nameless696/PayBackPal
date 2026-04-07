@@ -9,6 +9,7 @@ import Onboarding3Screen from '../screens/auth/Onboarding3Screen';
 import LoginScreen       from '../screens/auth/LoginScreen';
 import SignupScreen      from '../screens/auth/SignupScreen';
 import VerifyEmailScreen from '../screens/auth/VerifyEmailScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -22,6 +23,7 @@ export default function AuthNavigator() {
       <Stack.Screen name="Login"        component={LoginScreen} />
       <Stack.Screen name="Signup"       component={SignupScreen} />
       <Stack.Screen name="VerifyEmail"  component={VerifyEmailScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     </Stack.Navigator>
   );
 }

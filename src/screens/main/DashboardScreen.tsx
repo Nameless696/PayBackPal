@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Image } from 'react-native';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Image, RefreshControl } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -9,6 +9,10 @@ import { useModal } from '../../context/ModalContext';
 import { calculateBalances } from '../../utils/calculations';
 import { getCategoryIcon } from '../../constants/categories';
 import type { MainStackParamList } from '../../navigation/types';
+import GlassCard from '../../components/ui/GlassCard';
+import { Users, Plus } from 'lucide-react-native';
+import FeatureTour from '../../components/FeatureTour';
+import { useTour } from '../../hooks/useTour';
 
 type Nav = NativeStackNavigationProp<MainStackParamList>;
 
@@ -17,6 +21,23 @@ export default function DashboardScreen() {
   const { user } = useAuth();
   const { syncAll, groups, expenses, isSyncing, fmt } = useApp();
   const { openCreateGroup, openAddExpense } = useModal();
+  const { tourVisible, dismissTour, recheckTour } = useTour();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    if (user) await syncAll(user);
+    setRefreshing(false);
+  }, [user, syncAll]);
+
+  // Re-check tour whenever screen regains focus (picks up App Feature Guide reset from Settings)
+  const isFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstFocus.current) { isFirstFocus.current = false; return; }
+      recheckTour();
+    }, [recheckTour])
+  );
 
   useEffect(() => {
     if (user) syncAll(user);
@@ -32,52 +53,56 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg-body">
-      <ScrollView>
-        {/* ── Hero card ─────────────────────────────── */}
-        <LinearGradient colors={['#6C63FF', '#4F9EFF']} style={{ padding: 24, paddingBottom: 32 }}>
-          <View className="flex-row justify-between items-center mb-4">
-            <View className="w-10 h-10 rounded-full justify-center items-center overflow-hidden"
-              style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+      <ScrollView
+          contentContainerStyle={{ paddingBottom: 120 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#6C63FF"
+              colors={['#6C63FF']}
+              progressBackgroundColor="#1A1A2E"
+            />
+          }
+        >
+        {/* ── System Header ─────────────────────────────── */}
+        <View className="px-5 pt-4 pb-2 flex-row justify-between items-center bg-bg-body">
+            <TouchableOpacity 
+              className="w-10 h-10 rounded-full justify-center items-center overflow-hidden border border-border"
+              onPress={() => (navigation.navigate as any)('Profile')}
+            >
               {user?.avatar && user.avatar.length > 5 ? (
                 <Image source={{ uri: user.avatar }} style={{ width: '100%', height: '100%' }} />
               ) : (
-                <Text className="text-white text-lg font-bold">{user?.name ? user.name.charAt(0).toUpperCase() : '?'}</Text>
+                <Text className="text-text-1 text-lg font-bold">{user?.name ? user.name.charAt(0).toUpperCase() : '?'}</Text>
               )}
-            </View>
-            {isSyncing && <ActivityIndicator color="#FFF" size="small" />}
-          </View>
-          <Text className="text-white/80 text-[13px]">Total You're Owed</Text>
-          <Text className="text-white text-[36px] font-extrabold mb-4">{fmt(balances.youAreOwed)}</Text>
-
-          <View className="flex-row rounded-xl p-3" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
-            <View className="flex-1 items-center">
-              <Text className="text-white/70 text-[11px] mb-1">You Owe</Text>
-              <Text className="text-[15px] font-bold" style={{ color: '#FFA07A' }}>{fmt(balances.youOwe)}</Text>
-            </View>
-            <View className="w-px" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
-            <View className="flex-1 items-center">
-              <Text className="text-white/70 text-[11px] mb-1">Total Spent</Text>
-              <Text className="text-white text-[15px] font-bold">{fmt(balances.totalExpenses ?? 0)}</Text>
-            </View>
-            <View className="w-px" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
-            <View className="flex-1 items-center">
-              <Text className="text-white/70 text-[11px] mb-1">Groups</Text>
-              <Text className="text-white text-[15px] font-bold">
-                {groups.filter(g => !g.isArchived).length}
-              </Text>
-            </View>
-          </View>
-        </LinearGradient>
+            </TouchableOpacity>
+            {isSyncing && <ActivityIndicator color="#6C63FF" size="small" />}
+        </View>
+        
+        {/* ── Glassmorphism Hero card ─────────────────────────────── */}
+        <View className="px-4 py-2">
+           <GlassCard 
+              totalOwed={fmt(balances.youAreOwed)} 
+              youOwe={fmt(balances.youOwe)} 
+              totalSpent={fmt(balances.totalExpenses ?? 0)}
+              groupCount={groups.filter(g => !g.isArchived).length}
+            />
+        </View>
 
         {/* ── Quick actions ─────────────────────────── */}
         <View className="p-4">
           <View className="flex-row gap-3">
             <TouchableOpacity className="flex-1 bg-bg-card rounded-[14px] p-4 items-center border border-border" onPress={openCreateGroup}>
-              <Text className="text-[28px] mb-2">👥</Text>
+              <View className="w-10 h-10 rounded-full bg-primary/20 justify-center items-center mb-2">
+                <Users color="#6C63FF" size={20} />
+              </View>
               <Text className="text-text-1 text-[13px] font-semibold">New Group</Text>
             </TouchableOpacity>
             <TouchableOpacity className="flex-1 bg-bg-card rounded-[14px] p-4 items-center border border-border" onPress={() => openAddExpense()}>
-              <Text className="text-[28px] mb-2">➕</Text>
+              <View className="w-10 h-10 rounded-full bg-primary/20 justify-center items-center mb-2">
+                <Plus color="#6C63FF" size={22} />
+              </View>
               <Text className="text-text-1 text-[13px] font-semibold">Add Expense</Text>
             </TouchableOpacity>
           </View>
@@ -139,6 +164,9 @@ export default function DashboardScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {/* ── Feature Tour (first-launch & Settings re-launch) ── */}
+      <FeatureTour visible={tourVisible} onDismiss={dismissTour} />
     </SafeAreaView>
   );
 }

@@ -98,10 +98,28 @@ async function logout(): Promise<void> {
   await setToken(null);
 }
 
+async function forgotPassword(email: string) {
+  return _post('/auth/forgot-password', { email });
+}
+
+async function resetPassword(email: string, code: string, newPassword: string) {
+  const res = await _post('/auth/reset-password', { email, code, newPassword });
+  if (res.token) await setToken(res.token);
+  return res;
+}
+
+async function changePassword(currentPassword: string, newPassword: string) {
+  return _post('/auth/change-password', { currentPassword, newPassword });
+}
+
 async function getMe() { return _get('/auth/me'); }
 
 async function updateProfile(updates: Partial<User>) {
   return _patch('/auth/profile', updates);
+}
+
+async function deleteAccount() {
+  return _delete('/auth/me');
 }
 
 // ── Groups ───────────────────────────────────────────────────────
@@ -113,6 +131,7 @@ async function updateGroup(id: string, updates: Partial<Group>) { return _patch(
 async function deleteGroup(id: string) { return _delete(`/groups/${id}`); }
 async function addMember(groupId: string, memberData: unknown) { return _post(`/groups/${groupId}/members`, memberData); }
 async function removeMember(groupId: string, memberId: string) { return _delete(`/groups/${groupId}/members/${memberId}`); }
+async function joinGroup(groupId: string) { return _post(`/groups/${groupId}/join`, {}); }
 
 // ── Expenses ─────────────────────────────────────────────────────
 
@@ -160,11 +179,11 @@ async function ping(): Promise<boolean> {
 
 const ApiService = {
   initToken, setToken, getTokenSync,
-  login, signup, verifyEmail, resendVerification, logout, getMe, updateProfile,
-  getGroups, createGroup, getGroup, updateGroup, deleteGroup, addMember, removeMember,
+  login, signup, verifyEmail, resendVerification, logout, forgotPassword, resetPassword, changePassword, getMe, updateProfile,
+  getGroups, createGroup, getGroup, updateGroup, deleteGroup, addMember, removeMember, joinGroup,
   getExpenses, createExpense, updateExpense, deleteExpense, settleDebt,
   getNotifications, markNotificationRead, markAllNotificationsRead,
-  syncAll, sendEmail, ping,
+  syncAll, sendEmail, ping, deleteAccount,
 };
 
 export default ApiService;

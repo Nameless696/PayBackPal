@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { LayoutAnimation, Platform, UIManager } from 'react-native';
+import { Appearance, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import ApiService from '../api/apiService';
 import StorageService from '../services/storageService';
@@ -31,6 +31,7 @@ interface AppContextValue {
   addMember:     (groupId: string, member: Member) => Promise<void>;
   removeMember:  (groupId: string, memberId: string) => Promise<void>;
   archiveGroup:  (groupId: string, archived: boolean) => Promise<void>;
+  joinGroup:     (groupId: string) => Promise<void>;
 
   // Expense actions
   addExpense:         (data: Omit<Expense, 'id'>) => Promise<Expense>;
@@ -72,26 +73,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isSyncing,     setIsSyncing]     = useState(false);
   const [currency,      setCurrencyState] = useState(DEFAULT_CURRENCY);
-  const [isDark,        setIsDark]        = useState(true);
+  const isDark = colorScheme === 'dark'; // derived — stays in sync with system
   const [emailAlerts,   setEmailAlertsState] = useState(true);
+
+  // Follow the phone's system Dark/Light mode — re-applies whenever user changes OS setting
+  useEffect(() => {
+    const apply = (scheme: string | null | undefined) =>
+      setColorScheme(scheme === 'light' ? 'light' : 'dark');
+    apply(Appearance.getColorScheme());
+    const sub = Appearance.addChangeListener(({ colorScheme }) => apply(colorScheme));
+    return () => sub.remove();
+  }, [setColorScheme]);
 
   // Load persisted data on mount
   useEffect(() => {
     (async () => {
-      const [g, e, n, cur, dark, ea] = await Promise.all([
+      const [g, e, n, cur, ea] = await Promise.all([
         StorageService.getGroups(),
         StorageService.getExpenses(),
         StorageService.getNotifications(),
         StorageService.getSetting<string>('currency', DEFAULT_CURRENCY),
-        StorageService.getSetting<boolean>('isDark', true),
         StorageService.getSetting<boolean>('emailAlerts', true),
       ]);
       setGroups(g);
       setExpenses(e);
       setNotifications(n);
       setCurrencyState(cur);
-      setIsDark(dark);
-      setColorScheme(dark ? 'dark' : 'light'); // Sync NativeWind
+      setColorScheme(Appearance.getColorScheme() === 'light' ? 'light' : 'dark');
       setEmailAlertsState(ea);
     })();
   }, []);
@@ -133,18 +141,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // ── Group actions ────────────────────────────────────────────────
 
   const createGroup = useCallback(async (data: Omit<Group, 'id' | 'createdAt'>): Promise<Group> => {
-    const newGroup: Group = { ...data, id: makeId('g'), createdAt: new Date().toISOString() };
-    const updated = [...groups, newGroup];
+    const tempId   = makeId('g');
+    const newGroup: Group = { ...data, id: tempId, createdAt: new Date().toISOString() };
+    const optimistic = [...groups, newGroup];
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setGroups(updated);
-    await StorageService.saveGroups(updated);
+    setGroups(optimistic);
+    await StorageService.saveGroups(optimistic);
     addNotification('group_updated', `You created group "${newGroup.name}"`);
-    ApiService.createGroup(newGroup).then(res => {
-      if (res?.group?._id || res?._id) {
-        const serverId = res.group?._id ?? res._id;
-        setGroups(prev => prev.map(g => g.id === newGroup.id ? { ...g, id: serverId } : g));
+
+    try {
+      const res      = await ApiService.createGroup(newGroup);
+      const serverId = res?.group?._id ?? res?._id;
+      if (serverId && serverId !== tempId) {
+        const finalGroup = { ...newGroup, id: serverId };
+        setGroups(prev => {
+          const updated = prev.map(g => g.id === tempId ? finalGroup : g);
+          StorageService.saveGroups(updated);
+          return updated;
+        });
+        // Cascade: update any expenses already saved with the temp group id
+        setExpenses(prev => {
+          const hasStale = prev.some(e => e.groupId === tempId);
+          if (!hasStale) return prev;
+          const updated = prev.map(e => e.groupId === tempId ? { ...e, groupId: serverId } : e);
+          StorageService.saveExpenses(updated);
+          return updated;
+        });
+        return finalGroup;
       }
-    }).catch(e => console.warn('[Group] Create sync failed:', e.message));
+    } catch (e) {
+      console.warn('[Group] Create sync failed:', (e as Error).message);
+    }
     return newGroup;
   }, [groups, addNotification]);
 
@@ -171,16 +198,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [updateGroup]);
 
   const addMember = useCallback(async (groupId: string, member: Member) => {
-    const updated = groups.map(g => {
+    const optimistic = groups.map(g => {
       if (g.id !== groupId) return g;
       const already = g.members.some(m => m.id === member.id || m.email === member.email);
       if (already) return g;
       return { ...g, members: [...g.members, member] };
     });
-    setGroups(updated);
-    await StorageService.saveGroups(updated);
+    setGroups(optimistic);
+    await StorageService.saveGroups(optimistic);
     addNotification('member_added', `${member.name} joined the group`);
-    ApiService.addMember(groupId, member).catch(e => console.warn('[Member] Add sync failed:', e.message));
+    ApiService.addMember(groupId, member)
+      .then(res => {
+        if (res?.group?.members) {
+          setGroups(prev => {
+            const updated = prev.map(g =>
+              g.id === groupId ? { ...g, members: res.group.members } : g
+            );
+            StorageService.saveGroups(updated);
+            return updated;
+          });
+        }
+      })
+      .catch(e => console.warn('[Member] Add sync failed:', e.message));
   }, [groups, addNotification]);
 
   const removeMember = useCallback(async (groupId: string, memberId: string) => {
@@ -192,16 +231,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ApiService.removeMember(groupId, memberId).catch(e => console.warn('[Member] Remove sync failed:', e.message));
   }, [groups]);
 
+  const joinGroup = useCallback(async (groupId: string) => {
+    const res = await ApiService.joinGroup(groupId);
+    if (res?.group) {
+      const joined = res.group;
+      setGroups(prev => {
+        const exists = prev.some(g => g.id === joined._id || g.id === joined.id);
+        const updated = exists
+          ? prev.map(g => (g.id === joined._id || g.id === joined.id) ? { ...g, ...joined, id: joined._id ?? joined.id } : g)
+          : [...prev, { ...joined, id: joined._id ?? joined.id }];
+        StorageService.saveGroups(updated);
+        return updated;
+      });
+      addNotification('member_added', `You joined group "${joined.name}"`);
+    }
+  }, [addNotification]);
+
   // ── Expense actions ──────────────────────────────────────────────
 
   const addExpense = useCallback(async (data: Omit<Expense, 'id'>): Promise<Expense> => {
-    const newExpense: Expense = { ...data, id: makeId('e') };
-    const updated = [...expenses, newExpense];
+    const tempId = makeId('e');
+    const newExpense: Expense = { ...data, id: tempId };
+    const optimistic = [...expenses, newExpense];
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpenses(updated);
-    await StorageService.saveExpenses(updated);
+    setExpenses(optimistic);
+    await StorageService.saveExpenses(optimistic);
     addNotification('expense_added', `Added expense: ${newExpense.description} for ${newExpense.amount}`);
-    ApiService.createExpense(newExpense).catch(e => console.warn('[Expense] Add sync failed:', e.message));
+    ApiService.createExpense(newExpense)
+      .then(res => {
+        const serverId = res?.expense?._id ?? res?._id;
+        if (serverId && serverId !== tempId) {
+          setExpenses(prev => {
+            const updated = prev.map(e => e.id === tempId ? { ...e, id: serverId } : e);
+            StorageService.saveExpenses(updated);
+            return updated;
+          });
+        }
+      })
+      .catch(e => console.warn('[Expense] Add sync failed:', e.message));
     return newExpense;
   }, [expenses, addNotification]);
 
@@ -283,12 +350,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setIsDark(prev => {
-      const next = !prev;
-      StorageService.setSetting('isDark', next);
-      setColorScheme(next ? 'dark' : 'light');
-      return next;
-    });
+    // App follows system theme — toggle is preserved for API compatibility
+    setColorScheme('system');
   }, [setColorScheme]);
 
   const setEmailAlerts = useCallback((val: boolean) => {
@@ -299,7 +362,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{
       groups, expenses, notifications, isSyncing,
-      createGroup, updateGroup, deleteGroup, addMember, removeMember, archiveGroup,
+      createGroup, updateGroup, deleteGroup, addMember, removeMember, archiveGroup, joinGroup,
       addExpense, updateExpense, deleteExpense, settleDebt, recordContribution, addExpenseComment,
       addNotification, markNotifRead, markAllNotifsRead, unreadCount,
       syncAll,

@@ -8,8 +8,8 @@ import { useModal } from '../context/ModalContext';
 import DashboardScreen     from '../screens/main/DashboardScreen';
 import GroupsScreen        from '../screens/main/GroupsScreen';
 import NotificationsScreen from '../screens/main/NotificationsScreen';
-import SettingsScreen      from '../screens/main/SettingsScreen';
-
+import ProfileScreen       from '../screens/main/ProfileScreen';
+import { Home, Users, Plus, Bell, User } from 'lucide-react-native';
 import { Text } from 'react-native';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -40,12 +40,12 @@ export default function TabNavigator() {
       <Tab.Screen
         name="Home"
         component={DashboardScreen}
-        options={{ tabBarLabel: 'Home', tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🏠</Text> }}
+        options={{ tabBarLabel: 'Home', tabBarIcon: ({ color }) => <Home color={color} size={24} /> }}
       />
       <Tab.Screen
         name="Groups"
         component={GroupsScreen}
-        options={{ tabBarLabel: 'Groups', tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>👥</Text> }}
+        options={{ tabBarLabel: 'Groups', tabBarIcon: ({ color }) => <Users color={color} size={24} /> }}
       />
       <Tab.Screen
         name="FAB"
@@ -61,14 +61,14 @@ export default function TabNavigator() {
         component={NotificationsScreen}
         options={{
           tabBarLabel: 'Alerts',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🔔</Text>,
+          tabBarIcon: ({ color }) => <Bell color={color} size={24} />,
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         }}
       />
       <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{ tabBarLabel: 'Settings', tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>⚙️</Text> }}
+        name="Profile"
+        component={ProfileScreen}
+        options={{ tabBarLabel: 'Profile', tabBarIcon: ({ color }) => <User color={color} size={24} /> }}
       />
     </Tab.Navigator>
   );
@@ -76,25 +76,36 @@ export default function TabNavigator() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#1A1A2E',
-    borderTopColor: '#2D2B45',
-    borderTopWidth: 1,
-    height: 64,
-    paddingTop: 8,
-    position: 'absolute', // Ensures absolute positioning behavior works flawlessly
-    bottom: 0,
-    width: '100%',
+    backgroundColor: 'rgba(26, 26, 46, 0.85)',
+    borderTopWidth: 0,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    height: 70,
+    paddingTop: 12,
+    paddingBottom: 10,
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    borderRadius: 35,
+    elevation: 0,
+    shadowColor: '#6C63FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
   },
   fab: {
-    width: 56, height: 56, borderRadius: 28,
+    width: 60, height: 60, borderRadius: 30,
     backgroundColor: '#6C63FF',
     justifyContent: 'center', alignItems: 'center',
     position: 'absolute',
-    top: -24, // Pulls the FAB perfectly out of the tab bar
+    top: -24, 
     left: '50%',
-    marginLeft: -28, // Perfect horizontal centering
+    marginLeft: -30,
     shadowColor: '#6C63FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 8,
     elevation: 8,
+    borderWidth: 4,
+    borderColor: '#0F0F1A'
   },
-  fabIcon: { color: '#FFF', fontSize: 28, fontWeight: '300', lineHeight: 32 },
+  fabIcon: { color: '#FFF', fontSize: 32, fontWeight: '300', lineHeight: 36, marginTop: -2 },
 });

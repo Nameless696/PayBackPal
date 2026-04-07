@@ -34,12 +34,8 @@ export async function login(email: string, password: string): Promise<LoginResul
     if (apiErr.message?.toLowerCase().includes('verify')) {
       return { success: false, needsVerification: true, email, message: apiErr.message };
     }
-    if (!isNetworkError(apiErr.message)) {
-      return { success: false, message: apiErr.message || 'Invalid email or password' };
-    }
-    console.warn('[Auth] Backend unreachable, using local fallback');
+    return { success: false, message: apiErr.message || 'Invalid email or password' };
   }
-  return localLogin(email, password);
 }
 
 // ── Signup ────────────────────────────────────────────────────────
@@ -52,12 +48,11 @@ export async function signup(name: string, email: string, password: string): Pro
     }
     return { success: true, user: res.user };
   } catch (apiErr: any) {
-    if (!isNetworkError(apiErr.message)) {
-      return { success: false, message: apiErr.message || 'Registration failed' };
+    if (apiErr.message?.toLowerCase().includes('verify') || apiErr.message?.toLowerCase().includes('verification code has been sent')) {
+      return { success: false, needsVerification: true, email, message: apiErr.message };
     }
-    console.warn('[Auth] Backend unreachable, using local fallback');
+    return { success: false, message: apiErr.message || 'Registration failed' };
   }
-  return localSignup(name, email, password);
 }
 
 // ── Verify email ─────────────────────────────────────────────────
@@ -77,6 +72,36 @@ export async function resendCode(email: string): Promise<void> {
   await ApiService.resendVerification(email);
 }
 
+// ── Forgot Password ────────────────────────────────────────────────
+export async function forgotPassword(email: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const res = await ApiService.forgotPassword(email);
+    return { success: true, message: res.message };
+  } catch (err: any) {
+    return { success: false, message: err.message || 'Failed to send reset code' };
+  }
+}
+
+// ── Reset Password ────────────────────────────────────────────────
+export async function resetPassword(email: string, code: string, newPassword: string): Promise<{ success: boolean; user?: User; message?: string }> {
+  try {
+    const res = await ApiService.resetPassword(email, code, newPassword);
+    return { success: true, user: res.user, message: res.message };
+  } catch (err: any) {
+    return { success: false, message: err.message || 'Failed to reset password' };
+  }
+}
+
+// ── Change Password ──────────────────────────────────────────────
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const res = await ApiService.changePassword(currentPassword, newPassword);
+    return { success: true, message: res.message };
+  } catch (err: any) {
+    return { success: false, message: err.message || 'Password update failed' };
+  }
+}
+
 // ── Logout ────────────────────────────────────────────────────────
 
 export async function logout(): Promise<void> {
@@ -87,6 +112,18 @@ export async function logout(): Promise<void> {
   await StorageService.remove(StorageService.KEYS.EXPENSES);
 }
 
+// ── Delete Account ────────────────────────────────────────────────
+
+export async function deleteAccount(): Promise<{ success: boolean; message?: string }> {
+  try {
+    await ApiService.deleteAccount();
+    await logout();
+    return { success: true };
+  } catch (apiErr: any) {
+    return { success: false, message: apiErr.message || 'Failed to delete account' };
+  }
+}
+
 // ── Update profile ─────────────────────────────────────────────
 
 export async function updateProfile(updates: Partial<User>): Promise<{ success: boolean; user?: User; message?: string }> {
@@ -94,47 +131,6 @@ export async function updateProfile(updates: Partial<User>): Promise<{ success: 
     const res = await ApiService.updateProfile(updates);
     return { success: true, user: res.user };
   } catch (apiErr: any) {
-    if (!isNetworkError(apiErr.message)) {
-      return { success: false, message: apiErr.message || 'Profile update failed' };
-    }
-    console.warn('[Auth] Backend unreachable, using local fallback for updates');
+    return { success: false, message: apiErr.message || 'Profile update failed' };
   }
-  return localUpdateProfile(updates);
-}
-
-// ── Local fallback helpers ────────────────────────────────────────
-
-async function localLogin(email: string, password: string): Promise<LoginResult> {
-  const normalizedEmail = email.toLowerCase().trim();
-  const creds = await StorageService.get<Record<string, number>>(StorageService.KEYS.CREDENTIALS, {});
-  const storedHash = creds[normalizedEmail];
-
-  if (!storedHash) return { success: false, message: 'No local account found. Connect to the server to register.' };
-  if (storedHash !== hashPassword(password)) return { success: false, message: 'Incorrect password' };
-
-  const existing = await StorageService.getUser();
-  const name = existing?.email === normalizedEmail && existing.name ? existing.name : normalizedEmail.split('@')[0];
-
-  const user: User = { id: stableId(normalizedEmail), name, email: normalizedEmail, avatar: name.charAt(0).toUpperCase() };
-  return { success: true, user };
-}
-
-async function localSignup(name: string, email: string, password: string): Promise<SignupResult> {
-  const normalizedEmail = email.toLowerCase().trim();
-  const creds = await StorageService.get<Record<string, number>>(StorageService.KEYS.CREDENTIALS, {});
-  creds[normalizedEmail] = hashPassword(password);
-  await StorageService.save(StorageService.KEYS.CREDENTIALS, creds);
-
-  const user: User = { id: stableId(normalizedEmail), name: name.trim(), email: normalizedEmail, avatar: name.trim().charAt(0).toUpperCase() };
-  return { success: true, user };
-}
-
-async function localUpdateProfile(updates: Partial<User>): Promise<{ success: boolean; user?: User; message?: string }> {
-  const existing = await StorageService.getUser();
-  if (!existing) return { success: false, message: 'No local user session found' };
-  
-  const updatedUser = { ...existing, ...updates };
-  // (AuthContext immediately writes updatedUser to Storage afterwards, but we can do it here too just in case)
-  await StorageService.saveUser(updatedUser);
-  return { success: true, user: updatedUser };
 }

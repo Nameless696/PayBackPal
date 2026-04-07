@@ -32,6 +32,11 @@ connectDB();
 const app = express();
 
 // ── Security & Parsing ────────────────────────────────────────────
+// Tell Express we are behind a Render reverse proxy so Rate Limiting doesn't crash on X-Forwarded-For
+app.set('trust proxy', 1);
+
+app.use(helmet({ contentSecurityPolicy: false }));
+
 app.use(helmet({ contentSecurityPolicy: false }));
 
 // CORS — allow the frontend origin (file://, localhost:8080, etc.)

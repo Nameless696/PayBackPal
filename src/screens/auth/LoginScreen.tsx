@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, SafeAreaView,
-  ScrollView, KeyboardAvoidingView, Platform, Alert,
+  ScrollView, KeyboardAvoidingView, Platform, Image, StyleSheet,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Toast from 'react-native-toast-message';
+import { Eye, EyeOff } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import type { AuthScreenProps } from '../../navigation/types';
+
+const LOGO = require('../../assets/logo.png');
 
 export default function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
   const { login } = useAuth();
@@ -16,7 +19,7 @@ export default function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
   const [showPassword, setShowPassword] = useState(false);
 
   async function handleLogin() {
-    if (!email || !password) { Alert.alert('Error', 'Email and password are required'); return; }
+    if (!email || !password) { Toast.show({ type: 'error', text1: 'Missing Fields', text2: 'Email and password are required' }); return; }
     setLoading(true);
     try {
       const result = await login(email.trim(), password);
@@ -25,7 +28,7 @@ export default function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
       } else if (result.success) {
         Toast.show({ type: 'success', text1: 'Welcome back!', text2: `Signed in successfully` });
       } else {
-        Alert.alert('Sign In Failed', result.message ?? 'Invalid email or password');
+        Toast.show({ type: 'error', text1: 'Sign In Failed', text2: result.message ?? 'Invalid email or password' });
       }
     } finally {
       setLoading(false);
@@ -35,10 +38,12 @@ export default function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
   return (
     <SafeAreaView className="flex-1 bg-bg-body">
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <LinearGradient colors={['#6C63FF', '#4F9EFF']} style={{ padding: 32, paddingBottom: 40, alignItems: 'center' }}>
-          <Text className="text-[48px] mb-3">💸</Text>
-          <Text className="text-[26px] font-extrabold text-white">Welcome Back!</Text>
-          <Text className="text-sm text-white/80 mt-1">Sign in to your account</Text>
+        <LinearGradient colors={['#12082A', '#1A0A3E', '#6C63FF']} style={loginStyles.header}>
+          <View style={loginStyles.logoWrap}>
+            <Image source={LOGO} style={loginStyles.logo} resizeMode="contain" />
+          </View>
+          <Text style={loginStyles.title}>Welcome Back!</Text>
+          <Text style={loginStyles.subtitle}>Sign in to your account</Text>
         </LinearGradient>
 
         <ScrollView contentContainerStyle={{ padding: 24 }} keyboardShouldPersistTaps="handled">
@@ -59,11 +64,11 @@ export default function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
               secureTextEntry={!showPassword}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="absolute right-4 top-3.5 z-10">
-              <Text className="text-lg opacity-80">{showPassword ? '👁️' : '🙈'}</Text>
+              {showPassword ? <EyeOff color="#6B6890" size={20} /> : <Eye color="#6B6890" size={20} />}
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity className="self-end mt-2" onPress={() => Alert.alert('Password Reset', 'In Local mode, please create a new account or test with an existing local credential.')}>
+          <TouchableOpacity className="self-end mt-2" onPress={() => navigation.navigate('ForgotPassword')}>
             <Text className="text-primary text-[13px] font-semibold">Forgot Password?</Text>
           </TouchableOpacity>
 
@@ -81,3 +86,25 @@ export default function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
     </SafeAreaView>
   );
 }
+
+const loginStyles = StyleSheet.create({
+  header: {
+    paddingTop: 40,
+    paddingBottom: 36,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+  },
+  logoWrap: {
+    width: 90,
+    height: 90,
+    borderRadius: 22,
+    overflow: 'hidden',
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(108,99,255,0.4)',
+  },
+  logo: { width: '100%', height: '100%' },
+  title: { fontSize: 24, fontWeight: '800', color: '#FFF', marginBottom: 4 },
+  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.6)' },
+});
+

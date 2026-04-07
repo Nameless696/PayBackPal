@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Alert, TextInput, Image, Share } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, TextInput, Image, Share } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { Camera } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
+import { useThemeColors } from '../../hooks/useThemeColors';
+import GlowButton from '../../components/ui/GlowButton';
 import { useAuth } from '../../context/AuthContext';
 import { useModal } from '../../context/ModalContext';
 import { calculateGroupBalances, minimizeTransactions } from '../../utils/calculations';
@@ -16,6 +19,7 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
   const { openAddExpense, openAddMember, openSettle, openEditExpense, openExpenseDetails, showConfirm } = useModal();
   const [showSimplify, setShowSimplify] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const C = useThemeColors();
 
   const group = groups.find(g => g.id === groupId);
   const groupExp = expenses.filter(e => e.groupId === groupId);
@@ -23,7 +27,7 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
 
   if (!group) {
     return (
-      <SafeAreaView style={s.safe}>
+      <SafeAreaView className="flex-1 bg-bg-body">
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
           <Text style={s.backTxt}>← Back</Text>
         </TouchableOpacity>
@@ -69,7 +73,7 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
   }
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView className="flex-1 bg-bg-body">
       <ScrollView>
         {/* Hero */}
         <LinearGradient colors={['#6C63FF', '#4F9EFF']} style={s.hero}>
@@ -88,7 +92,7 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
               </View>
             )}
             <View style={{ position: 'absolute', bottom: 6, right: -6, backgroundColor: '#0F0F1A', borderRadius: 16, width: 32, height: 32, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#4F9EFF' }}>
-              <Text style={{ fontSize: 14 }}>📷</Text>
+              <Camera color="#4F9EFF" size={14} />
             </View>
           </TouchableOpacity>
 
@@ -114,23 +118,17 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
 
         {/* Action row */}
         <View style={s.actionRow}>
-          <TouchableOpacity style={s.actionBtn} onPress={() => openAddExpense(groupId)}>
-            <Text style={s.actionTxt}>+ Expense</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.actionBtn} onPress={() => openAddMember(groupId)}>
-            <Text style={s.actionTxt}>+ Member</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.actionBtnGhost} onPress={() => openSettle(groupId)}>
-            <Text style={s.actionTxtGhost}>⚖️ Settle</Text>
-          </TouchableOpacity>
+          <GlowButton label="+ Expense" onPress={() => openAddExpense(groupId)} style={{ flex: 1 }} />
+          <GlowButton label="+ Member"  onPress={() => openAddMember(groupId)}  style={{ flex: 1 }} />
+          <GlowButton label="⚖️ Settle" onPress={() => openSettle(groupId)}     style={{ flex: 1 }} />
         </View>
 
         {/* Expenses Search */}
         <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A2E', borderRadius: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: '#2D2B45' }}>
+          <View className="flex-row items-center bg-bg-card rounded-xl px-3 border border-border">
             <Text style={{ fontSize: 16, marginRight: 8 }}>🔍</Text>
             <TextInput 
-              style={{ flex: 1, color: '#F1F0FF', paddingVertical: 12 }} 
+              className="flex-1 text-text-1 py-3"
               placeholder="Search expenses..." 
               placeholderTextColor="#6B6890" 
               value={searchQuery} 
@@ -143,14 +141,14 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
         <View style={s.section}>
           <Text style={s.sectionTitle}>Activity Feed ({filteredExp.length})</Text>
           {filteredExp.length === 0 ? (
-            <View style={s.empty}><Text style={s.emptyTxt}>{searchQuery ? 'No matching activity' : 'No activity yet'}</Text></View>
+            <View style={s.empty}><Text style={[s.emptyTxt, { color: C.muted }]}>{searchQuery ? 'No matching activity' : 'No activity yet'}</Text></View>
           ) : [...filteredExp].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exp => (
             exp.isSettlement ? (
               <TouchableOpacity key={exp.id} style={[s.expRow, { opacity: 0.85, borderColor: '#22C55E' }]} onPress={() => openExpenseDetails(exp.id)}>
                 <Text style={s.expIcon}>💸</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.expDesc}>{exp.description || 'Settlement'}</Text>
-                  <Text style={s.expMeta}>{new Date(exp.date).toLocaleDateString()} · {exp.comments?.length || 0}💬</Text>
+                  <Text style={[s.expDesc, { color: C.text1 }]}>{exp.description || 'Settlement'}</Text>
+                  <Text style={[s.expMeta, { color: C.muted }]}>{new Date(exp.date).toLocaleDateString()} · {exp.comments?.length || 0}💬</Text>
                 </View>
                 <Text style={[s.expAmt, { color: '#22C55E', fontWeight: '900' }]}>{fmt(exp.amount)}</Text>
               </TouchableOpacity>
@@ -158,10 +156,10 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
               <TouchableOpacity key={exp.id} style={s.expRow} onPress={() => openExpenseDetails(exp.id)}>
                 <Text style={s.expIcon}>{getCategoryIcon(exp.category, exp.customCategoryIcon)}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.expDesc}>{exp.description}</Text>
-                  <Text style={s.expMeta}>Paid by {memberMap[exp.paidBy] ?? exp.paidBy} · {new Date(exp.date).toLocaleDateString()} · {exp.comments?.length || 0}💬</Text>
+                  <Text style={[s.expDesc, { color: C.text1 }]}>{exp.description}</Text>
+                  <Text style={[s.expMeta, { color: C.muted }]}>Paid by {memberMap[exp.paidBy] ?? exp.paidBy} · {new Date(exp.date).toLocaleDateString()} · {exp.comments?.length || 0}💬</Text>
                 </View>
-                <Text style={s.expAmt}>{fmt(exp.amount)}</Text>
+                <Text style={[s.expAmt, { color: C.text1 }]}>{fmt(exp.amount)}</Text>
                 {exp.paidBy === userId && (
                   <TouchableOpacity onPress={() => openEditExpense(exp.id)} style={{ padding: 4, marginLeft: 8 }}>
                     <Text style={{ fontSize: 16 }}>✏️</Text>
@@ -181,8 +179,8 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
                 <Text style={s.memberAvatarTxt}>{member.name.charAt(0).toUpperCase()}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={s.memberName}>{member.name}</Text>
-                <Text style={s.memberEmail}>{member.email}</Text>
+                <Text style={[s.memberName, { color: C.text1 }]}>{member.name}</Text>
+                <Text style={[s.memberEmail, { color: C.muted }]}>{member.email}</Text>
               </View>
               {member.id !== userId && (
                 <TouchableOpacity onPress={() => handleRemoveMember(member.id, member.name)}>
@@ -203,8 +201,8 @@ export default function GroupDetailsScreen({ navigation, route }: MainScreenProp
               {simplified.transactions.length === 0 ? (
                 <Text style={{ color: '#22C55E', fontWeight: '600' }}>All settled up! ✅</Text>
               ) : simplified.transactions.map((t, i) => (
-                <Text key={i} style={s.simplifyRow}>
-                  {memberMap[t.from] ?? t.from} → {memberMap[t.to] ?? t.to}: <Text style={{ fontWeight: '700', color: '#F1F0FF' }}>{fmt(t.amount)}</Text>
+                <Text key={i} style={[s.simplifyRow, { color: C.text2 }]}>
+                  {memberMap[t.from] ?? t.from} → {memberMap[t.to] ?? t.to}: <Text style={{ fontWeight: '700', color: C.text1 }}>{fmt(t.amount)}</Text>
                 </Text>
               ))}
               {simplified.savings > 0 && <Text style={s.savingsTxt}>Saves {simplified.savings} transaction{simplified.savings !== 1 ? 's' : ''}</Text>}
@@ -246,26 +244,26 @@ const s = StyleSheet.create({
   actionBtnGhost: { flex: 1, borderWidth: 1, borderColor: '#6C63FF', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
   actionTxtGhost: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
   section: { paddingHorizontal: 16, paddingBottom: 8 },
-  sectionTitle: { color: '#F1F0FF', fontSize: 16, fontWeight: '700', marginBottom: 10 },
-  empty: { backgroundColor: '#1A1A2E', borderRadius: 10, padding: 16, alignItems: 'center' },
-  emptyTxt: { color: '#6B6890', fontSize: 14 },
-  expRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A2E', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#2D2B45' },
+  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10, color: '#6C63FF' },
+  empty: { borderRadius: 10, padding: 16, alignItems: 'center', backgroundColor: 'rgba(108,99,255,0.05)' },
+  emptyTxt: { fontSize: 14 },
+  expRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(108,99,255,0.2)', backgroundColor: 'transparent' },
   expIcon: { fontSize: 22, marginRight: 10 },
-  expDesc: { color: '#F1F0FF', fontSize: 14, fontWeight: '600' },
-  expMeta: { color: '#6B6890', fontSize: 12, marginTop: 2 },
-  expAmt: { color: '#F1F0FF', fontSize: 14, fontWeight: '700' },
-  memberRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A2E', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#2D2B45' },
+  expDesc: { fontSize: 14, fontWeight: '600' },
+  expMeta: { fontSize: 12, marginTop: 2 },
+  expAmt: { fontSize: 14, fontWeight: '700' },
+  memberRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(108,99,255,0.2)', backgroundColor: 'transparent' },
   memberAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#6C63FF', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
   memberAvatarTxt: { color: '#FFF', fontWeight: '700', fontSize: 15 },
-  memberName: { color: '#F1F0FF', fontSize: 14, fontWeight: '600' },
-  memberEmail: { color: '#6B6890', fontSize: 12, marginTop: 2 },
+  memberName: { fontSize: 14, fontWeight: '600' },
+  memberEmail: { fontSize: 12, marginTop: 2 },
   simplifyToggle: { paddingVertical: 12 },
   simplifyToggleTxt: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
-  simplifyCard: { backgroundColor: '#1A1A2E', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#2D2B45' },
-  simplifyRow: { color: '#B8B5D1', fontSize: 14, marginBottom: 6, lineHeight: 20 },
+  simplifyCard: { borderRadius: 10, padding: 14, borderWidth: 1, borderColor: 'rgba(108,99,255,0.2)' },
+  simplifyRow: { fontSize: 14, marginBottom: 6, lineHeight: 20 },
   savingsTxt: { color: '#22C55E', fontSize: 12, marginTop: 6 },
-  archiveBtn: { borderWidth: 1, borderColor: '#2D2B45', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 10 },
-  archiveTxt: { color: '#B8B5D1', fontWeight: '600' },
+  archiveBtn: { borderWidth: 1, borderColor: 'rgba(108,99,255,0.2)', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 10 },
+  archiveTxt: { color: '#6C63FF', fontWeight: '600' },
   deleteBtn: { borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   deleteTxt: { color: '#EF4444', fontWeight: '600' },
 });

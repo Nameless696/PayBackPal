@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView } from 'react-native';
+import Toast from 'react-native-toast-message';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import type { AuthScreenProps } from '../../navigation/types';
@@ -12,11 +13,11 @@ export default function VerifyEmailScreen({ navigation, route }: AuthScreenProps
   const [resent,  setResent]  = useState(false);
 
   async function handleVerify() {
-    if (code.length !== 6) { Alert.alert('Error', 'Please enter the 6-digit code'); return; }
+    if (code.length !== 6) { Toast.show({ type: 'error', text1: 'Invalid Code', text2: 'Please enter the full 6-digit code' }); return; }
     setLoading(true);
     try {
       const result = await verifyEmail(email, code.trim());
-      if (!result.success) Alert.alert('Verification Failed', result.message ?? 'Invalid or expired code');
+      if (!result.success) Toast.show({ type: 'error', text1: 'Verification Failed', text2: result.message ?? 'Invalid or expired code' });
     } finally {
       setLoading(false);
     }
@@ -26,9 +27,9 @@ export default function VerifyEmailScreen({ navigation, route }: AuthScreenProps
     try {
       await resendCode(email);
       setResent(true);
-      Alert.alert('Code Sent', 'A new code has been sent to your email');
+      Toast.show({ type: 'success', text1: 'Code Sent!', text2: 'A new code has been sent to your email' });
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Could not resend code');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message ?? 'Could not resend code' });
     }
   }
 

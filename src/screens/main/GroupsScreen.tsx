@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, SafeAreaView, Modal, Alert, Platform, Image } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, TextInput, SafeAreaView, Modal, Platform, Image, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useApp } from '../../context/AppContext';
@@ -12,9 +12,16 @@ type Nav = NativeStackNavigationProp<MainStackParamList>;
 
 export default function GroupsScreen() {
   const navigation = useNavigation<Nav>();
+  const { groups, joinGroup, syncAll, isSyncing } = useApp();
   const { user } = useAuth();
-  const { groups, addMember } = useApp();
   const { openCreateGroup } = useModal();
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    if (user) await syncAll(user);
+    setRefreshing(false);
+  }, [user, syncAll]);
   
   const [search,       setSearch]       = useState('');
   const [showArchived, setShowArchived] = useState(false);
@@ -24,16 +31,14 @@ export default function GroupsScreen() {
   const [inviteCode, setInviteCode] = useState('');
 
   const submitJoin = async () => {
-    if (!inviteCode || !user) return;
+    if (!inviteCode.trim() || !user) return;
     try {
-      await addMember(inviteCode.trim(), {
-        id: user.id, name: user.name, email: user.email, role: 'member', status: 'joined'
-      } as any);
-      Toast.show({ type: 'success', text1: 'Successfully Joined!' });
+      await joinGroup(inviteCode.trim());
+      Toast.show({ type: 'success', text1: '🎉 Joined!', text2: 'Group synced to your account' });
       setJoinModalOpen(false);
       setInviteCode('');
-    } catch (e) {
-      Alert.alert('Error', 'Invalid invite code or group does not exist');
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Could Not Join', text2: e?.message || 'Invalid invite code or group does not exist' });
     }
   };
 
@@ -46,7 +51,7 @@ export default function GroupsScreen() {
       <View className="flex-row justify-between items-center p-4 pb-2" style={{ paddingTop: Platform.OS === 'android' ? 44 : 16 }}>
         <Text className="text-text-1 text-[22px] font-extrabold">Groups</Text>
         <View className="flex-row gap-2">
-          <TouchableOpacity className="border border-primary rounded-[10px] px-[14px] py-2" onPress={() => setJoinModalOpen(true)}>
+          <TouchableOpacity className="bg-bg-card border border-primary rounded-[10px] px-[14px] py-2" onPress={() => setJoinModalOpen(true)}>
             <Text className="text-primary font-bold text-sm">Join</Text>
           </TouchableOpacity>
           <TouchableOpacity className="bg-primary rounded-[10px] px-[14px] py-2" onPress={openCreateGroup}>
@@ -94,6 +99,15 @@ export default function GroupsScreen() {
         data={active}
         keyExtractor={item => item.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#6C63FF"
+            colors={['#6C63FF']}
+            progressBackgroundColor="#1A1A2E"
+          />
+        }
         ListEmptyComponent={
           <View className="items-center pt-12">
             <Text className="text-[48px] mb-3">👥</Text>
