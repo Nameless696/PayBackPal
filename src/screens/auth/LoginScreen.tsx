@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, SafeAreaView,
-  ScrollView, KeyboardAvoidingView, Platform, Image, StyleSheet,
+  ScrollView, KeyboardAvoidingView, Platform, Image, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Toast from 'react-native-toast-message';
@@ -9,7 +9,7 @@ import { Eye, EyeOff } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import type { AuthScreenProps } from '../../navigation/types';
 
-const LOGO = require('../../assets/logo.png');
+const LOGO = require('../../assets/logo.jpg');
 
 export default function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
   const { login } = useAuth();
@@ -53,6 +53,7 @@ export default function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
             value={email} onChangeText={setEmail}
             placeholder="your@email.com" placeholderTextColor="#6B6890"
             keyboardType="email-address" autoCapitalize="none" autoComplete="email"
+            accessibilityLabel="Email address"
           />
 
           <Text className="text-text-2 text-[13px] font-semibold mb-1.5 mt-4">Password</Text>
@@ -62,18 +63,22 @@ export default function LoginScreen({ navigation }: AuthScreenProps<'Login'>) {
               value={password} onChangeText={setPassword}
               placeholder="••••••••" placeholderTextColor="#6B6890"
               secureTextEntry={!showPassword}
+              accessibilityLabel="Password"
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="absolute right-4 top-3.5 z-10">
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="absolute right-4 top-3.5 z-10" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'} accessibilityRole="button">
               {showPassword ? <EyeOff color="#6B6890" size={20} /> : <Eye color="#6B6890" size={20} />}
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity className="self-end mt-2" onPress={() => navigation.navigate('ForgotPassword')}>
+          <TouchableOpacity className="self-end mt-2" onPress={() => navigation.navigate('ForgotPassword')} accessibilityLabel="Forgot password" accessibilityRole="link">
             <Text className="text-primary text-[13px] font-semibold">Forgot Password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity disabled={loading} className="bg-primary rounded-[14px] py-4 items-center mt-6" onPress={handleLogin}>
-            <Text className="text-white text-base font-bold">{loading ? 'Signing in…' : 'Sign In'}</Text>
+          <TouchableOpacity disabled={loading} className="bg-primary rounded-[14px] py-4 items-center mt-6" style={loading ? { opacity: 0.65 } : undefined} onPress={handleLogin} accessibilityLabel={loading ? 'Signing in' : 'Sign in'} accessibilityRole="button">
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {loading && <ActivityIndicator size="small" color="#FFF" />}
+              <Text className="text-white text-base font-bold">{loading ? 'Signing in…' : 'Sign In'}</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity className="items-center py-4" onPress={() => navigation.navigate('Signup')}>

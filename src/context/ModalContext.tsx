@@ -21,6 +21,8 @@ interface ModalContextValue {
   closeEditProfile:    () => void;
   openReceiptLightbox: (uri: string) => void;
   closeReceiptLightbox:() => void;
+  openAddTransaction:  () => void;
+  closeAddTransaction: () => void;
 
   // Sheet state (read by sheet components)
   addExpenseGroupId:   string | null;
@@ -38,6 +40,7 @@ interface ModalContextValue {
   expenseDetailsOpen:  boolean;
   editProfileOpen:     boolean;
   receiptLightboxOpen: boolean;
+  addTransactionOpen:  boolean;
 
   // Promise-based dialogs
   showConfirm: (message: string, opts?: { title?: string; okLabel?: string; danger?: boolean }) => Promise<boolean>;
@@ -55,6 +58,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
   const [expenseDetailsOpen,  setExpenseDetailsOpen]  = useState(false);
   const [editProfileOpen,     setEditProfileOpen]     = useState(false);
   const [receiptLightboxOpen, setReceiptLightboxOpen] = useState(false);
+  const [addTransactionOpen,  setAddTransactionOpen]  = useState(false);
 
   const [addExpenseGroupId, setAddExpenseGroupId] = useState<string | null>(null);
   const [addMemberGroupId,  setAddMemberGroupId]  = useState<string | null>(null);
@@ -95,7 +99,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value: ModalContextValue = {
-    addExpenseOpen, createGroupOpen, addMemberOpen, settleOpen, editExpenseOpen, expenseDetailsOpen, editProfileOpen, receiptLightboxOpen,
+    addExpenseOpen, createGroupOpen, addMemberOpen, settleOpen, editExpenseOpen, expenseDetailsOpen, editProfileOpen, receiptLightboxOpen, addTransactionOpen,
     addExpenseGroupId, addMemberGroupId, settleGroupId, editExpenseId, receiptUri,
 
     openAddExpense:      (gId?) => { setAddExpenseGroupId(gId ?? null); setAddExpenseOpen(true); },
@@ -114,6 +118,8 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
     closeEditProfile:    () => setEditProfileOpen(false),
     openReceiptLightbox: (uri) => { setReceiptUri(uri); setReceiptLightboxOpen(true); },
     closeReceiptLightbox:() => setReceiptLightboxOpen(false),
+    openAddTransaction:  () => setAddTransactionOpen(true),
+    closeAddTransaction: () => setAddTransactionOpen(false),
 
     showConfirm, showPrompt,
   };

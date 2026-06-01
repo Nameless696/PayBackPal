@@ -8,7 +8,7 @@ import Toast from 'react-native-toast-message';
 import { Eye, EyeOff, Lock } from 'lucide-react-native';
 import { changePassword } from '../../services/authService';
 import type { MainScreenProps } from '../../navigation/types';
-import { useThemeColors } from '../../hooks/useThemeColors';
+import { useThemeColors, type ThemeColors } from '../../hooks/useThemeColors';
 
 export default function ChangePasswordScreen({ navigation }: MainScreenProps<'ChangePassword'>) {
   const C = useThemeColors();
@@ -19,6 +19,7 @@ export default function ChangePasswordScreen({ navigation }: MainScreenProps<'Ch
   const [showCur,    setShowCur]    = useState(false);
   const [showNew,    setShowNew]    = useState(false);
   const [showCon,    setShowCon]    = useState(false);
+  const s = React.useMemo(() => getStyles(C), [C]);
 
   function err(title: string, msg: string) {
     Toast.show({ type: 'error', text1: title, text2: msg, position: 'top' });
@@ -132,33 +133,35 @@ export default function ChangePasswordScreen({ navigation }: MainScreenProps<'Ch
   );
 }
 
-const s = StyleSheet.create({
-  root:      { flex: 1, backgroundColor: '#0F0F1A' },
-  header:    { padding: 32, paddingTop: 40, paddingBottom: 40, alignItems: 'center' },
-  backBtn:   { alignSelf: 'flex-start', marginBottom: 20 },
-  backTxt:   { color: 'rgba(255,255,255,0.75)', fontSize: 15 },
-  lockBadge: {
-    width: 64, height: 64, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center', alignItems: 'center',
-    marginBottom: 14,
-  },
-  title:     { color: '#FFF', fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
-  subtitle:  { color: 'rgba(255,255,255,0.65)', fontSize: 13, marginTop: 4 },
+function getStyles(C: ThemeColors) {
+  return StyleSheet.create({
+    root:      { flex: 1, backgroundColor: C.bg },
+    header:    { padding: 32, paddingTop: 40, paddingBottom: 40, alignItems: 'center' },
+    backBtn:   { alignSelf: 'flex-start', marginBottom: 20 },
+    backTxt:   { color: 'rgba(255,255,255,0.75)', fontSize: 15 },
+    lockBadge: {
+      width: 64, height: 64, borderRadius: 20,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      justifyContent: 'center', alignItems: 'center',
+      marginBottom: 14,
+    },
+    title:     { color: '#FFF', fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
+    subtitle:  { color: 'rgba(255,255,255,0.65)', fontSize: 13, marginTop: 4 },
 
-  form:      { padding: 24 },
-  label:     { color: '#B8B5D1', fontSize: 13, fontWeight: '600', marginTop: 20, marginBottom: 8 },
-  labelNote: { color: '#6B6890', fontWeight: '400', fontSize: 12 },
-  inputRow: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#1A1A2E', borderRadius: 14,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
-  },
-  inputFlex: { flex: 1, color: '#F1F0FF', padding: 16, fontSize: 15 },
-  eyeBtn:    { paddingHorizontal: 14 },
+    form:      { padding: 24 },
+    label:     { color: C.text2, fontSize: 13, fontWeight: '600', marginTop: 20, marginBottom: 8 },
+    labelNote: { color: C.muted, fontWeight: '400', fontSize: 12 },
+    inputRow: {
+      flexDirection: 'row', alignItems: 'center',
+      backgroundColor: C.card, borderRadius: 14,
+      borderWidth: 1, borderColor: C.border,
+      overflow: 'hidden',
+    },
+    inputFlex: { flex: 1, color: C.text1, padding: 16, fontSize: 15 },
+    eyeBtn:    { paddingHorizontal: 14 },
 
-  btn:       { marginTop: 32, borderRadius: 14, overflow: 'hidden' },
-  btnGrad:   { paddingVertical: 17, alignItems: 'center' },
-  btnTxt:    { color: '#FFF', fontSize: 16, fontWeight: '700' },
-});
+    btn:       { marginTop: 32, borderRadius: 14, overflow: 'hidden' },
+    btnGrad:   { paddingVertical: 17, alignItems: 'center' },
+    btnTxt:    { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  });
+}

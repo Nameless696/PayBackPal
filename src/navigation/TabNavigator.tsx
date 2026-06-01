@@ -2,14 +2,13 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { TabParamList } from './types';
-import { useApp } from '../context/AppContext';
 import { useModal } from '../context/ModalContext';
 
 import DashboardScreen     from '../screens/main/DashboardScreen';
 import GroupsScreen        from '../screens/main/GroupsScreen';
-import NotificationsScreen from '../screens/main/NotificationsScreen';
+import FinanceScreen       from '../screens/main/FinanceScreen';
 import ProfileScreen       from '../screens/main/ProfileScreen';
-import { Home, Users, Plus, Bell, User } from 'lucide-react-native';
+import { Home, Users, Plus, Wallet, User } from 'lucide-react-native';
 import { Text } from 'react-native';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -18,14 +17,13 @@ function EmptyScreen() { return <View style={{ flex: 1, backgroundColor: '#0F0F1
 
 function FabButton({ onPress }: { onPress: () => void }) {
   return (
-    <TouchableOpacity onPress={onPress} style={styles.fab} activeOpacity={0.85}>
+    <TouchableOpacity onPress={onPress} style={styles.fab} activeOpacity={0.85} accessibilityLabel="Add new expense" accessibilityRole="button">
       <Text style={styles.fabIcon}>＋</Text>
     </TouchableOpacity>
   );
 }
 
 export default function TabNavigator() {
-  const { unreadCount } = useApp();
   const { openAddExpense } = useModal();
 
   return (
@@ -40,12 +38,12 @@ export default function TabNavigator() {
       <Tab.Screen
         name="Home"
         component={DashboardScreen}
-        options={{ tabBarLabel: 'Home', tabBarIcon: ({ color }) => <Home color={color} size={24} /> }}
+        options={{ tabBarLabel: 'Home', tabBarIcon: ({ color }) => <Home color={color} size={24} />, tabBarAccessibilityLabel: 'Home tab' }}
       />
       <Tab.Screen
         name="Groups"
         component={GroupsScreen}
-        options={{ tabBarLabel: 'Groups', tabBarIcon: ({ color }) => <Users color={color} size={24} /> }}
+        options={{ tabBarLabel: 'Groups', tabBarIcon: ({ color }) => <Users color={color} size={24} />, tabBarAccessibilityLabel: 'Groups tab' }}
       />
       <Tab.Screen
         name="FAB"
@@ -57,18 +55,17 @@ export default function TabNavigator() {
         listeners={{ tabPress: (e) => e.preventDefault() }}
       />
       <Tab.Screen
-        name="Alerts"
-        component={NotificationsScreen}
+        name="Finance"
+        component={FinanceScreen}
         options={{
-          tabBarLabel: 'Alerts',
-          tabBarIcon: ({ color }) => <Bell color={color} size={24} />,
-          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarLabel: 'Finance',
+          tabBarIcon: ({ color }) => <Wallet color={color} size={24} />,
         }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarLabel: 'Profile', tabBarIcon: ({ color }) => <User color={color} size={24} /> }}
+        options={{ tabBarLabel: 'Profile', tabBarIcon: ({ color }) => <User color={color} size={24} />, tabBarAccessibilityLabel: 'Profile tab' }}
       />
     </Tab.Navigator>
   );

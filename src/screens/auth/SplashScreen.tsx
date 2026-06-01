@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, StyleSheet, Image } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 
-const LOGO = require('../../assets/logo.png');
+const LOGO = require('../../assets/logo.jpg');
 
 export default function SplashScreen({ navigation }: any) {
   const scale  = useRef(new Animated.Value(0.75)).current;

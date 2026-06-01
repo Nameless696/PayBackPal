@@ -22,6 +22,7 @@ export type MainStackParamList = {
   ReceiptStorage: undefined;
   Reports:        undefined;
   Settings:       undefined;
+  Notifications:  undefined;
   ChangePassword: undefined;
 };
 
@@ -31,7 +32,7 @@ export type TabParamList = {
   Home:     undefined;
   Groups:   undefined;
   FAB:      undefined;
-  Alerts:   undefined;
+  Finance:  undefined;
   Profile:  undefined;
 };
 

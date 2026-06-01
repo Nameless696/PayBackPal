@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, SafeAreaView, Image, StyleSheet } from 'r
 import LinearGradient from 'react-native-linear-gradient';
 import type { AuthScreenProps } from '../../navigation/types';
 
-const LOGO = require('../../assets/logo.png');
+const LOGO = require('../../assets/logo.jpg');
 
 const SLIDES = [
   {

@@ -1,30 +1,36 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Share, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Share, Dimensions, TextInput } from 'react-native';
 import { PieChart, BarChart } from 'react-native-chart-kit';
 import { useNavigation } from '@react-navigation/native';
 import { useApp } from '../../context/AppContext';
 import { generateExpenseSummary } from '../../utils/calculations';
 import { categoryIcons } from '../../constants/categories';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 export default function ReportsScreen() {
   const navigation = useNavigation();
   const { expenses, groups, fmt } = useApp();
+  const C = useThemeColors();
 
   const today      = new Date().toISOString().split('T')[0];
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
 
-  const [startDate, setStartDate] = useState(monthStart);
+  const [startDate, setStartDate] = useState('2020-01-01');
   const [endDate,   setEndDate]   = useState(today);
   const [summary,   setSummary]   = useState<ReturnType<typeof generateExpenseSummary> | null>(null);
   const [chartView, setChartView] = useState<'pie' | 'bar'>('pie');
+
+  // Auto-generate report on mount and when dates/expenses change
+  useEffect(() => {
+    setSummary(generateExpenseSummary(expenses, startDate, endDate));
+  }, [expenses, startDate, endDate]);
 
   const screenWidth = Dimensions.get('window').width;
   const colors = ['#6C63FF', '#22C55E', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899', '#8B5CF6'];
 
   const chartConfig = {
-    backgroundColor: '#1A1A2E',
-    backgroundGradientFrom: '#1A1A2E',
-    backgroundGradientTo: '#1A1A2E',
+    backgroundColor: C.card,
+    backgroundGradientFrom: C.card,
+    backgroundGradientTo: C.card,
     color: (opacity = 1) => `rgba(108, 99, 255, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(184, 181, 209, ${opacity})`,
     propsForDots: { r: '6', strokeWidth: '2', stroke: '#4F9EFF' },
@@ -65,7 +71,7 @@ export default function ReportsScreen() {
     name: cat,
     population: amt,
     color: colors[idx % colors.length],
-    legendFontColor: '#B8B5D1',
+    legendFontColor: C.text2,
     legendFontSize: 12
   })) : [];
 
@@ -88,20 +94,51 @@ export default function ReportsScreen() {
         {/* Date range card */}
         <View className="bg-bg-card rounded-2xl p-4 mb-4 border border-border">
           <Text className="text-text-1 text-base font-bold mb-3">Date Range</Text>
+
+          {/* Quick Presets */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 14 }}>
+            {[
+              { label: 'This Week', fn: () => { const d = new Date(); const s = new Date(d); s.setDate(d.getDate() - 7); setStartDate(s.toISOString().split('T')[0]); setEndDate(d.toISOString().split('T')[0]); } },
+              { label: 'This Month', fn: () => { const d = new Date(); setStartDate(new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0]); setEndDate(d.toISOString().split('T')[0]); } },
+              { label: 'Last Month', fn: () => { const d = new Date(); setStartDate(new Date(d.getFullYear(), d.getMonth() - 1, 1).toISOString().split('T')[0]); setEndDate(new Date(d.getFullYear(), d.getMonth(), 0).toISOString().split('T')[0]); } },
+              { label: 'All Time', fn: () => { setStartDate('2020-01-01'); setEndDate(new Date().toISOString().split('T')[0]); } },
+            ].map(preset => (
+              <TouchableOpacity
+                key={preset.label}
+                style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(108,99,255,0.1)', borderWidth: 1, borderColor: 'rgba(108,99,255,0.2)' }}
+                onPress={preset.fn}
+              >
+                <Text style={{ color: '#6C63FF', fontWeight: '600', fontSize: 12 }}>{preset.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Editable Date Inputs */}
           <View className="flex-row items-center justify-around mb-4">
-            <View className="bg-bg-surface rounded-[10px] p-3 items-center min-w-[120px]">
+            <View className="bg-bg-surface rounded-[10px] p-3 items-center min-w-[130px]">
               <Text className="text-text-muted text-[11px] mb-1">From</Text>
-              <Text className="text-text-1 text-sm font-semibold">{startDate}</Text>
+              <TextInput
+                className="text-text-1 text-sm font-semibold text-center"
+                value={startDate}
+                onChangeText={setStartDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#6B6890"
+                maxLength={10}
+              />
             </View>
             <Text className="text-text-muted text-lg">→</Text>
-            <View className="bg-bg-surface rounded-[10px] p-3 items-center min-w-[120px]">
+            <View className="bg-bg-surface rounded-[10px] p-3 items-center min-w-[130px]">
               <Text className="text-text-muted text-[11px] mb-1">To</Text>
-              <Text className="text-text-1 text-sm font-semibold">{endDate}</Text>
+              <TextInput
+                className="text-text-1 text-sm font-semibold text-center"
+                value={endDate}
+                onChangeText={setEndDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#6B6890"
+                maxLength={10}
+              />
             </View>
           </View>
-          <Text className="text-text-muted text-xs mb-[14px] leading-[18px]">
-            Note: Date range uses the current month by default. To change, edit the date strings in code (date picker coming in v4).
-          </Text>
           <TouchableOpacity className="bg-primary rounded-xl py-[14px] items-center" onPress={generateReport}>
             <Text className="text-white font-bold text-[15px]">Generate Report</Text>
           </TouchableOpacity>

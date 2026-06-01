@@ -4,7 +4,7 @@ import { useColorScheme } from 'nativewind';
 import ApiService from '../api/apiService';
 import StorageService from '../services/storageService';
 import { currencies, DEFAULT_CURRENCY } from '../constants/currencies';
-import type { Group, Expense, Notification, Member, User } from '../types';
+import type { Group, Expense, Notification, Member, User, PersonalTransaction, Budget } from '../types';
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -61,6 +61,13 @@ interface AppContextValue {
 
   // Formatting
   fmt: (amount: number) => string;
+
+  // Personal Finance
+  personalTransactions: PersonalTransaction[];
+  addPersonalTransaction:    (data: Omit<PersonalTransaction, 'id'>) => Promise<PersonalTransaction>;
+  deletePersonalTransaction: (id: string) => Promise<void>;
+  budget: Budget | null;
+  setBudget: (monthlyLimit: number) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -75,6 +82,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currency,      setCurrencyState] = useState(DEFAULT_CURRENCY);
   const isDark = colorScheme === 'dark'; // derived — stays in sync with system
   const [emailAlerts,   setEmailAlertsState] = useState(true);
+  const [personalTransactions, setPersonalTransactions] = useState<PersonalTransaction[]>([]);
+  const [budget, setBudgetState] = useState<Budget | null>(null);
 
   // Follow the phone's system Dark/Light mode — re-applies whenever user changes OS setting
   useEffect(() => {
@@ -88,12 +97,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Load persisted data on mount
   useEffect(() => {
     (async () => {
-      const [g, e, n, cur, ea] = await Promise.all([
+      const [g, e, n, cur, ea, pt, bgt] = await Promise.all([
         StorageService.getGroups(),
         StorageService.getExpenses(),
         StorageService.getNotifications(),
         StorageService.getSetting<string>('currency', DEFAULT_CURRENCY),
         StorageService.getSetting<boolean>('emailAlerts', true),
+        StorageService.getPersonalTransactions(),
+        StorageService.getBudget(),
       ]);
       setGroups(g);
       setExpenses(e);
@@ -101,6 +112,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCurrencyState(cur);
       setColorScheme(Appearance.getColorScheme() === 'light' ? 'light' : 'dark');
       setEmailAlertsState(ea);
+      setPersonalTransactions(pt);
+      setBudgetState(bgt);
     })();
   }, []);
 
@@ -122,6 +135,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await StorageService.saveGroups(g);
       await StorageService.saveExpenses(e);
       await StorageService.saveNotifications(n);
+      // Sync personal finance data
+      if ((sync as any).personalTransactions) {
+        setPersonalTransactions((sync as any).personalTransactions);
+        await StorageService.savePersonalTransactions((sync as any).personalTransactions);
+      }
+      if ((sync as any).budget !== undefined) {
+        setBudgetState((sync as any).budget);
+        await StorageService.saveBudget((sync as any).budget);
+      }
     } catch (err) {
       console.warn('[Sync] Backend unreachable, using local data');
     } finally {
@@ -361,6 +383,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     StorageService.setSetting('emailAlerts', val);
   }, []);
 
+  // ── Personal Finance ─────────────────────────────────────────────────
+
+  const addPersonalTransaction = useCallback(async (data: Omit<PersonalTransaction, 'id'>): Promise<PersonalTransaction> => {
+    const tempId = makeId('pt');
+    const newTx: PersonalTransaction = { ...data, id: tempId };
+    const optimistic = [newTx, ...personalTransactions];
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setPersonalTransactions(optimistic);
+    await StorageService.savePersonalTransactions(optimistic);
+    ApiService.addPersonalTransaction(newTx)
+      .then(res => {
+        const serverId = res?.transaction?.id ?? res?.transaction?._id;
+        if (serverId && serverId !== tempId) {
+          setPersonalTransactions(prev => {
+            const updated = prev.map(t => t.id === tempId ? { ...t, id: serverId } : t);
+            StorageService.savePersonalTransactions(updated);
+            return updated;
+          });
+        }
+      })
+      .catch(e => console.warn('[Personal] Add sync failed:', e.message));
+    return newTx;
+  }, [personalTransactions]);
+
+  const deletePersonalTransaction = useCallback(async (id: string) => {
+    const updated = personalTransactions.filter(t => t.id !== id);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setPersonalTransactions(updated);
+    await StorageService.savePersonalTransactions(updated);
+    ApiService.deletePersonalTransaction(id).catch(e => console.warn('[Personal] Delete sync failed:', e.message));
+  }, [personalTransactions]);
+
+  const setBudgetAction = useCallback(async (monthlyLimit: number) => {
+    const newBudget: Budget = { id: budget?.id || makeId('b'), monthlyLimit };
+    setBudgetState(newBudget);
+    await StorageService.saveBudget(newBudget);
+    ApiService.setPersonalBudget(monthlyLimit)
+      .then(res => {
+        if (res?.budget) {
+          setBudgetState(res.budget);
+          StorageService.saveBudget(res.budget);
+        }
+      })
+      .catch(e => console.warn('[Budget] Sync failed:', e.message));
+  }, [budget]);
+
   return (
     <AppContext.Provider value={{
       groups, expenses, notifications, isSyncing,
@@ -372,6 +440,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isDark, toggleTheme,
       emailAlertsEnabled: emailAlerts, setEmailAlerts,
       fmt,
+      personalTransactions, addPersonalTransaction, deletePersonalTransaction,
+      budget, setBudget: setBudgetAction,
     }}>
       {children}
     </AppContext.Provider>

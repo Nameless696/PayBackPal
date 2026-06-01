@@ -4,7 +4,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { TrendingUp } from 'lucide-react-native';
 import type { AuthScreenProps } from '../../navigation/types';
 
-const LOGO = require('../../assets/logo.png');
+const LOGO = require('../../assets/logo.jpg');
 
 export default function Onboarding2Screen({ navigation }: AuthScreenProps<'Onboarding2'>) {
   return (

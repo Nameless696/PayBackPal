@@ -1,3 +1,13 @@
+/**
+ * GlobalSheets.tsx — Centralised Bottom Sheet Manager
+ *
+ * All bottom-sheet modals (Add Expense, Create Group, Add Member, Settle Debt,
+ * Edit Profile, Expense Details, Add Transaction) are defined here and
+ * controlled via the ModalContext. This avoids duplicating sheet logic
+ * across multiple screens and ensures consistent styling.
+ *
+ * Uses @gorhom/bottom-sheet v5 for gesture-driven sheet behaviour.
+ */
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Image, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetTextInput, BottomSheetScrollView } from '@gorhom/bottom-sheet';
@@ -16,7 +26,7 @@ const renderBackdrop = (props: any) => (
 
 export default function GlobalSheets() {
   const modalCtx = useModal();
-  const { groups, addExpense, createGroup, addMember, settleDebt, expenses, addExpenseComment, fmt } = useApp();
+  const { groups, addExpense, createGroup, addMember, settleDebt, expenses, addExpenseComment, fmt, addPersonalTransaction } = useApp();
   const { user, updateProfile } = useAuth();
 
   // BottomSheet Refs
@@ -26,10 +36,11 @@ export default function GlobalSheets() {
   const settleRef = useRef<BottomSheetModal>(null);
   const profileRef = useRef<BottomSheetModal>(null);
   const detailsRef = useRef<BottomSheetModal>(null);
+  const transactionRef = useRef<BottomSheetModal>(null);
 
   // Snap points
   const snapMedium = useMemo(() => ['65%'], []);
-  const snapLarge = useMemo(() => ['85%'], []);
+  const snapLarge = useMemo(() => ['90%'], []);
   const snapSmall = useMemo(() => ['50%'], []);
 
   // Sync state to Modals
@@ -39,14 +50,29 @@ export default function GlobalSheets() {
   useEffect(() => { modalCtx.settleOpen ? settleRef.current?.present() : settleRef.current?.dismiss(); }, [modalCtx.settleOpen]);
   useEffect(() => { modalCtx.editProfileOpen ? profileRef.current?.present() : profileRef.current?.dismiss(); }, [modalCtx.editProfileOpen]);
   useEffect(() => { modalCtx.expenseDetailsOpen ? detailsRef.current?.present() : detailsRef.current?.dismiss(); }, [modalCtx.expenseDetailsOpen]);
+  useEffect(() => { modalCtx.addTransactionOpen ? transactionRef.current?.present() : transactionRef.current?.dismiss(); }, [modalCtx.addTransactionOpen]);
 
   // -- Add Expense State --
+  // Smart pre-fill: default to last-used group and category
+  const lastExpense = expenses.length > 0
+    ? [...expenses].filter(e => !e.isSettlement).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+    : null;
   const [expAmount, setExpAmount] = useState('');
   const [expDesc, setExpDesc] = useState('');
   const [expGroup, setExpGroup] = useState('');
   const [expPaidBy, setExpPaidBy] = useState('');
   const [expReceipt, setExpReceipt] = useState<string | null>(null);
-  const [expCategory, setExpCategory] = useState('general');
+  const [expCategory, setExpCategory] = useState(lastExpense?.category || 'general');
+
+  // Reset pre-fill when sheet opens
+  useEffect(() => {
+    if (modalCtx.addExpenseOpen && lastExpense) {
+      setExpCategory(lastExpense.category || 'general');
+      if (!modalCtx.addExpenseGroupId && lastExpense.groupId) {
+        setExpGroup(lastExpense.groupId);
+      }
+    }
+  }, [modalCtx.addExpenseOpen]);
 
   const activeExpenseGroupObj = useMemo(() => {
     const targetGroup = expGroup || (modalCtx.addExpenseGroupId ?? groups[0]?.id);
@@ -60,13 +86,15 @@ export default function GlobalSheets() {
   };
 
   const submitExpense = async () => {
-    if (!expAmount || !expDesc) return Toast.show({ type: 'error', text1: 'Missing fields' });
+    const amt = parseFloat(expAmount);
+    if (!expAmount || isNaN(amt) || amt <= 0) return Toast.show({ type: 'error', text1: 'Invalid Amount', text2: 'Enter a valid number greater than 0' });
+    if (!expDesc.trim()) return Toast.show({ type: 'error', text1: 'Missing Description', text2: 'Please describe this expense' });
     const targetGroup = expGroup || (modalCtx.addExpenseGroupId ?? groups[0]?.id);
-    if (!targetGroup) return Toast.show({ type: 'error', text1: 'Please create a group first' });
+    if (!targetGroup) return Toast.show({ type: 'error', text1: 'No Group', text2: 'Please create a group first' });
     
     await addExpense({
-      amount: parseFloat(expAmount),
-      description: expDesc,
+      amount: amt,
+      description: expDesc.trim(),
       category: expCategory,
       groupId: targetGroup,
       paidBy: expPaidBy || user?.id || '',
@@ -167,6 +195,32 @@ export default function GlobalSheets() {
     await addExpenseComment(activeExpense.id, commentText.trim(), user.name);
     setCommentText('');
   };
+
+  // -- Add Transaction (Personal Finance) State --
+  const [txType, setTxType] = useState<'income' | 'expense'>('expense');
+  const [txAmount, setTxAmount] = useState('');
+  const [txDesc, setTxDesc] = useState('');
+  const [txCategory, setTxCategory] = useState('general');
+  const [txRecurring, setTxRecurring] = useState(false);
+  const [txRecurringDay, setTxRecurringDay] = useState('');
+
+  const submitTransaction = async () => {
+    if (!txAmount || !txDesc) return Toast.show({ type: 'error', text1: 'Amount and description required' });
+    await addPersonalTransaction({
+      type: txType,
+      amount: parseFloat(txAmount),
+      description: txDesc,
+      category: txCategory,
+      date: new Date().toISOString(),
+      isRecurring: txRecurring,
+      recurringDay: txRecurring && txRecurringDay ? parseInt(txRecurringDay) : null,
+    });
+    Toast.show({ type: 'success', text1: txType === 'income' ? 'Income Added!' : 'Expense Added!' });
+    modalCtx.closeAddTransaction();
+    setTxAmount(''); setTxDesc(''); setTxCategory('general'); setTxRecurring(false); setTxRecurringDay('');
+  };
+
+  const txCategories = ['general', 'food', 'transport', 'shopping', 'bills', 'entertainment', 'health', 'education', 'salary', 'freelance', 'other'];
 
   return (
     <>
@@ -320,6 +374,16 @@ export default function GlobalSheets() {
                 <Text style={{ color: '#B8B5D1', fontSize: 13 }}>Date: {new Date(activeExpense.date).toLocaleDateString()}</Text>
               </View>
 
+              {/* Receipt Viewer */}
+              {activeExpense.receipt && (
+                <TouchableOpacity
+                  style={{ backgroundColor: '#6C63FF', padding: 12, borderRadius: 12, alignItems: 'center', marginBottom: 16 }}
+                  onPress={() => modalCtx.openReceiptLightbox(activeExpense.receipt!)}
+                >
+                  <Text style={{ color: '#FFF', fontWeight: 'bold' }}>📷 View Receipt</Text>
+                </TouchableOpacity>
+              )}
+
               <Text style={{ color: '#FFF', fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>Discussion Log</Text>
               
               {(!activeExpense.comments || activeExpense.comments.length === 0) ? (
@@ -354,6 +418,66 @@ export default function GlobalSheets() {
           ) : (
             <Text style={{ color: '#FFF' }}>Syncing Expense Mapping...</Text>
           )}
+        </BottomSheetScrollView>
+      </BottomSheetModal>
+
+      {/* 7. Add Transaction Sheet (Personal Finance) */}
+      <BottomSheetModal ref={transactionRef} snapPoints={snapLarge} backdropComponent={renderBackdrop} onDismiss={modalCtx.closeAddTransaction} backgroundStyle={styles.bg} handleIndicatorStyle={styles.indicator}>
+        <BottomSheetScrollView contentContainerStyle={styles.content}>
+          <Text style={styles.title}>Add Transaction</Text>
+
+          {/* Type Toggle */}
+          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+            {(['income', 'expense'] as const).map(t => (
+              <TouchableOpacity
+                key={t}
+                style={[styles.catTag, txType === t && { backgroundColor: t === 'income' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', borderColor: t === 'income' ? '#22C55E' : '#EF4444' }]}
+                onPress={() => setTxType(t)}
+              >
+                <Text style={[styles.catTagTxt, txType === t && { color: t === 'income' ? '#22C55E' : '#EF4444', fontWeight: 'bold' }]}>
+                  {t === 'income' ? '💰 Income' : '💸 Expense'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <BottomSheetTextInput style={styles.input} placeholder="Amount" placeholderTextColor="#6B6890" value={txAmount} onChangeText={setTxAmount} keyboardType="numeric" />
+          <BottomSheetTextInput style={styles.input} placeholder="Description" placeholderTextColor="#6B6890" value={txDesc} onChangeText={setTxDesc} />
+
+          {/* Category */}
+          <Text style={{ color: '#B8B5D1', marginBottom: 8, fontSize: 13, fontWeight: 'bold' }}>Category</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
+            {txCategories.map(cat => (
+              <TouchableOpacity key={cat} style={[styles.catTag, txCategory === cat && styles.catTagActive, { marginBottom: 8 }]} onPress={() => setTxCategory(cat)}>
+                <Text style={[styles.catTagTxt, txCategory === cat && styles.catTagTxtActive]}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Recurring Toggle */}
+          <TouchableOpacity
+            style={[styles.catTag, txRecurring && styles.catTagActive, { marginBottom: 12 }]}
+            onPress={() => setTxRecurring(!txRecurring)}
+          >
+            <Text style={[styles.catTagTxt, txRecurring && styles.catTagTxtActive]}>🔄 Recurring Monthly</Text>
+          </TouchableOpacity>
+
+          {txRecurring && (
+            <BottomSheetTextInput
+              style={styles.input}
+              placeholder="Day of month (1-28)"
+              placeholderTextColor="#6B6890"
+              value={txRecurringDay}
+              onChangeText={setTxRecurringDay}
+              keyboardType="numeric"
+            />
+          )}
+
+          <TouchableOpacity style={styles.btn} onPress={submitTransaction}>
+            <Text style={styles.btnText}>{txType === 'income' ? 'Add Income' : 'Add Expense'}</Text>
+          </TouchableOpacity>
         </BottomSheetScrollView>
       </BottomSheetModal>
 

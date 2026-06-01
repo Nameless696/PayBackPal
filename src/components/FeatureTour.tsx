@@ -41,8 +41,8 @@ const STEPS: TourStep[] = [
   },
   {
     icon: <Bell color="#F59E0B" size={32} />,
-    title: 'Alerts',
-    description: 'Get notified whenever someone adds an expense, settles up, or invites you to a group.',
+    title: 'My Finance',
+    description: 'Track your personal income and expenses, set monthly budgets, and view spending analytics — all separate from group splits.',
     accent: '#F59E0B',
   },
   {

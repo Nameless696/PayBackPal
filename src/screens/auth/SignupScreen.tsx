@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, SafeAreaView,
-  ScrollView, KeyboardAvoidingView, Platform, StyleSheet,
+  ScrollView, KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Toast from 'react-native-toast-message';
@@ -28,6 +28,9 @@ export default function SignupScreen({ navigation }: AuthScreenProps<'Signup'>) 
   async function handleSignup() {
     if (!name.trim() || !email.trim() || !password || !confirm) {
       err('Missing Fields', 'All fields are required'); return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      err('Invalid Email', 'Please enter a valid email address'); return;
     }
     if (password.length < 8) {
       err('Weak Password', 'Password must be at least 8 characters'); return;
@@ -131,9 +134,12 @@ export default function SignupScreen({ navigation }: AuthScreenProps<'Signup'>) 
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Text style={s.btnTxt}>
-                  {loading ? 'Creating account…' : 'Create Account'}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  {loading && <ActivityIndicator size="small" color="#FFF" />}
+                  <Text style={s.btnTxt}>
+                    {loading ? 'Creating account…' : 'Create Account'}
+                  </Text>
+                </View>
               </LinearGradient>
             </TouchableOpacity>
 

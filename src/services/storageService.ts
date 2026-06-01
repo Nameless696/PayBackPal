@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { User, Group, Expense, Notification } from '../types';
+import type { User, Group, Expense, Notification, PersonalTransaction, Budget } from '../types';
 
 export const KEYS = {
   USER:          'paybackpal_user',
@@ -10,6 +10,8 @@ export const KEYS = {
   SETTINGS:      'paybackpal_settings',
   JWT:           'paybackpal_jwt',
   CREDENTIALS:   'paybackpal_credentials',
+  PERSONAL:      'paybackpal_personal',
+  BUDGET:        'paybackpal_budget',
 } as const;
 
 async function save(key: string, data: unknown): Promise<boolean> {
@@ -45,6 +47,10 @@ const getExpenses   = () => get<Expense[]>(KEYS.EXPENSES, []);
 const saveExpenses  = (e: Expense[]) => save(KEYS.EXPENSES, e);
 const getNotifications  = () => get<Notification[]>(KEYS.NOTIFICATIONS, []);
 const saveNotifications = (n: Notification[]) => save(KEYS.NOTIFICATIONS, n);
+const getPersonalTransactions  = () => get<PersonalTransaction[]>(KEYS.PERSONAL, []);
+const savePersonalTransactions = (t: PersonalTransaction[]) => save(KEYS.PERSONAL, t);
+const getBudget  = () => get<Budget | null>(KEYS.BUDGET, null);
+const saveBudget = (b: Budget | null) => save(KEYS.BUDGET, b);
 
 async function getSetting<T>(key: string, defaultValue: T): Promise<T> {
   const settings = await get<Record<string, unknown>>(KEYS.SETTINGS, {});
@@ -64,6 +70,8 @@ const StorageService = {
   getGroups, saveGroups,
   getExpenses, saveExpenses,
   getNotifications, saveNotifications,
+  getPersonalTransactions, savePersonalTransactions,
+  getBudget, saveBudget,
   getSetting, setSetting,
 };
 

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../constants/config';
-import type { Group, Expense, Notification, User } from '../types';
+import type { Group, Expense, Notification, User, PersonalTransaction, Budget } from '../types';
 
 // ── Token (in-memory cache + AsyncStorage) ───────────────────────
 let _cachedToken: string | null = null;
@@ -132,6 +132,8 @@ async function deleteGroup(id: string) { return _delete(`/groups/${id}`); }
 async function addMember(groupId: string, memberData: unknown) { return _post(`/groups/${groupId}/members`, memberData); }
 async function removeMember(groupId: string, memberId: string) { return _delete(`/groups/${groupId}/members/${memberId}`); }
 async function joinGroup(groupId: string) { return _post(`/groups/${groupId}/join`, {}); }
+async function getGroupReport(groupId: string) { return _get(`/groups/${groupId}/report`); }
+async function sendGroupReminders(groupId: string) { return _post(`/groups/${groupId}/reminders`, {}); }
 
 // ── Expenses ─────────────────────────────────────────────────────
 
@@ -155,6 +157,23 @@ async function markAllNotificationsRead() { return _patch('/notifications/read-a
 async function syncAll(): Promise<{ groups: Group[]; expenses: Expense[]; notifications: Notification[] }> {
   return _get('/sync');
 }
+
+// ── Personal Finance ─────────────────────────────────────────────
+
+async function getPersonalTransactions(period?: string) {
+  const q = period ? `?period=${period}` : '';
+  return _get(`/personal${q}`);
+}
+async function addPersonalTransaction(data: Partial<PersonalTransaction>) { return _post('/personal', data); }
+async function updatePersonalTransaction(id: string, updates: Partial<PersonalTransaction>) { return _patch(`/personal/${id}`, updates); }
+async function deletePersonalTransaction(id: string) { return _delete(`/personal/${id}`); }
+async function getPersonalSummary(period?: string) {
+  const q = period ? `?period=${period}` : '';
+  return _get(`/personal/summary${q}`);
+}
+async function getPersonalBudget() { return _get('/personal/budget'); }
+async function setPersonalBudget(monthlyLimit: number) { return _post('/personal/budget', { monthlyLimit }); }
+async function processRecurring() { return _post('/personal/process-recurring', {}); }
 
 // ── Email ────────────────────────────────────────────────────────
 
@@ -180,10 +199,12 @@ async function ping(): Promise<boolean> {
 const ApiService = {
   initToken, setToken, getTokenSync,
   login, signup, verifyEmail, resendVerification, logout, forgotPassword, resetPassword, changePassword, getMe, updateProfile,
-  getGroups, createGroup, getGroup, updateGroup, deleteGroup, addMember, removeMember, joinGroup,
+  getGroups, createGroup, getGroup, updateGroup, deleteGroup, addMember, removeMember, joinGroup, getGroupReport, sendGroupReminders,
   getExpenses, createExpense, updateExpense, deleteExpense, settleDebt,
   getNotifications, markNotificationRead, markAllNotificationsRead,
   syncAll, sendEmail, ping, deleteAccount,
+  getPersonalTransactions, addPersonalTransaction, updatePersonalTransaction, deletePersonalTransaction,
+  getPersonalSummary, getPersonalBudget, setPersonalBudget, processRecurring,
 };
 
 export default ApiService;

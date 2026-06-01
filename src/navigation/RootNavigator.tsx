@@ -15,7 +15,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
+      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade', gestureEnabled: false }}>
         {user ? (
           <Stack.Screen name="Main" component={MainNavigator} />
         ) : (

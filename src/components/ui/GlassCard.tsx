@@ -4,6 +4,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Animated, {
   useSharedValue, useAnimatedStyle,
   withRepeat, withTiming, Easing,
+  interpolate,
 } from 'react-native-reanimated';
 import { TrendingUp, CreditCard, Users } from 'lucide-react-native';
 
@@ -12,15 +13,21 @@ interface Props {
   youOwe: string;
   totalSpent: string;
   groupCount: number;
+  currencySymbol?: string;
 }
 
-export default function GlassCard({ totalOwed, youOwe, totalSpent, groupCount }: Props) {
+export default function GlassCard({ totalOwed, youOwe, totalSpent, groupCount, currencySymbol = '₨' }: Props) {
   const rotation = useSharedValue(0);
+  const shimmer = useSharedValue(0);
 
   useEffect(() => {
     rotation.value = withRepeat(
       withTiming(360, { duration: 14000, easing: Easing.linear }),
       -1, false
+    );
+    shimmer.value = withRepeat(
+      withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+      -1, true
     );
   }, []);
 
@@ -28,30 +35,51 @@ export default function GlassCard({ totalOwed, youOwe, totalSpent, groupCount }:
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
+  const shimmerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(shimmer.value, [0, 1], [0.03, 0.08]),
+  }));
+
   return (
     <View style={styles.card}>
-      {/* Dark base */}
+      {/* Dark base with deeper gradient */}
       <View style={StyleSheet.absoluteFillObject}>
         <LinearGradient
-          colors={['#1A0A2E', '#0D0D1A', '#12122A']}
+          colors={['#0F0524', '#0D0D1A', '#0A1428']}
           style={StyleSheet.absoluteFillObject}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         />
       </View>
 
+      {/* Animated shimmer overlay for glass feel */}
+      <Animated.View style={[StyleSheet.absoluteFillObject, shimmerStyle]}>
+        <LinearGradient
+          colors={['transparent', 'rgba(255,255,255,0.15)', 'transparent']}
+          style={StyleSheet.absoluteFillObject}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        />
+      </Animated.View>
+
       {/* Spinning glow orb */}
       <Animated.View style={[styles.orb, orbStyle]}>
         <LinearGradient
-          colors={['rgba(108,99,255,0.6)', 'rgba(79,158,255,0.3)', 'transparent']}
+          colors={['rgba(108,99,255,0.5)', 'rgba(79,158,255,0.25)', 'transparent']}
           style={StyleSheet.absoluteFillObject}
         />
       </Animated.View>
 
-      {/* Glass border */}
+      {/* Second subtle orb — bottom-left for depth */}
+      <View style={styles.orbSecondary}>
+        <LinearGradient
+          colors={['rgba(79,158,255,0.15)', 'transparent']}
+          style={StyleSheet.absoluteFillObject}
+        />
+      </View>
+
+      {/* Top glass edge highlight */}
       <LinearGradient
-        colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.03)']}
-        style={styles.glassBorder}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.02)']}
+        style={styles.glassEdge}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
       />
 
       {/* Content */}
@@ -62,8 +90,8 @@ export default function GlassCard({ totalOwed, youOwe, totalSpent, groupCount }:
             <TrendingUp color="#FFF" size={14} />
             <Text style={styles.headerBadgeText}>PayBackPal</Text>
           </View>
-          <View style={styles.rsBadge}>
-            <Text style={styles.rsText}>Rs</Text>
+          <View style={styles.currencyBadge}>
+            <Text style={styles.currencyText}>{currencySymbol}</Text>
           </View>
         </View>
 
@@ -71,13 +99,19 @@ export default function GlassCard({ totalOwed, youOwe, totalSpent, groupCount }:
         <Text style={styles.labelSmall}>You're owed</Text>
         <Text style={styles.mainAmount}>{totalOwed}</Text>
 
-        {/* Divider */}
-        <View style={styles.divider} />
+        {/* Glass divider */}
+        <LinearGradient
+          colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.12)', 'rgba(255,255,255,0)']}
+          style={styles.divider}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+        />
 
         {/* Stats row */}
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <CreditCard color="rgba(255,150,100,0.9)" size={13} />
+            <View style={styles.statIconWrap}>
+              <CreditCard color="#FFA07A" size={12} />
+            </View>
             <View>
               <Text style={styles.statLabel}>You owe</Text>
               <Text style={styles.statValueWarn}>{youOwe}</Text>
@@ -85,7 +119,9 @@ export default function GlassCard({ totalOwed, youOwe, totalSpent, groupCount }:
           </View>
           <View style={styles.statItemSep} />
           <View style={styles.statItem}>
-            <TrendingUp color="rgba(108,99,255,0.9)" size={13} />
+            <View style={styles.statIconWrap}>
+              <TrendingUp color="#A5B4FC" size={12} />
+            </View>
             <View>
               <Text style={styles.statLabel}>Total spent</Text>
               <Text style={styles.statValue}>{totalSpent}</Text>
@@ -93,7 +129,9 @@ export default function GlassCard({ totalOwed, youOwe, totalSpent, groupCount }:
           </View>
           <View style={styles.statItemSep} />
           <View style={styles.statItem}>
-            <Users color="rgba(79,158,255,0.9)" size={13} />
+            <View style={styles.statIconWrap}>
+              <Users color="#93C5FD" size={12} />
+            </View>
             <View>
               <Text style={styles.statLabel}>Groups</Text>
               <Text style={styles.statValue}>{groupCount}</Text>
@@ -108,24 +146,39 @@ export default function GlassCard({ totalOwed, youOwe, totalSpent, groupCount }:
 const styles = StyleSheet.create({
   card: {
     width: '100%',
-    height: 200,
+    height: 210,
     borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(108,99,255,0.3)',
+    borderColor: 'rgba(108,99,255,0.25)',
+    // Glass shadow
+    shadowColor: '#6C63FF',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 12,
   },
-  glassBorder: {
+  glassEdge: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
-    height: 1,
+    height: 1.5,
   },
   orb: {
     position: 'absolute',
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    top: -30,
-    right: -30,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    top: -35,
+    right: -35,
+    overflow: 'hidden',
+  },
+  orbSecondary: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    bottom: -30,
+    left: -20,
     overflow: 'hidden',
   },
   content: {
@@ -141,11 +194,13 @@ const styles = StyleSheet.create({
   headerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 20,
     gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   headerBadgeText: {
     color: '#FFF',
@@ -153,37 +208,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 4,
   },
-  rsBadge: {
+  currencyBadge: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(108,99,255,0.4)',
+    backgroundColor: 'rgba(108,99,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(108,99,255,0.6)',
+    borderColor: 'rgba(108,99,255,0.5)',
   },
-  rsText: {
+  currencyText: {
     color: '#FFF',
     fontWeight: '900',
     fontSize: 13,
   },
   labelSmall: {
-    color: 'rgba(255,255,255,0.55)',
+    color: 'rgba(255,255,255,0.5)',
     fontSize: 12,
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
     marginTop: 4,
+    textTransform: 'uppercase',
   },
   mainAmount: {
     color: '#FFFFFF',
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '800',
     letterSpacing: -0.5,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    marginVertical: 12,
+    marginVertical: 10,
   },
   statsRow: {
     flexDirection: 'row',
@@ -195,16 +250,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  statIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   statItemSep: {
     width: 1,
     height: 28,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    marginHorizontal: 8,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginHorizontal: 6,
   },
   statLabel: {
     color: 'rgba(255,255,255,0.4)',
     fontSize: 10,
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   statValue: {
     color: '#FFFFFF',

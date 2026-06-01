@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Image, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Image, StyleSheet, StatusBar, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../context/AuthContext';
@@ -32,7 +32,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView className="flex-1 bg-bg-body">
       {/* Header */}
-      <View className="px-5 pt-4 pb-2">
+      <View style={{ paddingHorizontal: 20, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 8 : 16, paddingBottom: 8 }}>
         <Text className="text-white text-3xl font-bold">Profile</Text>
       </View>
 
@@ -51,7 +51,10 @@ export default function ProfileScreen() {
           
           <TouchableOpacity
             style={styles.editBtn}
-            onPress={openEditProfile}>
+            onPress={openEditProfile}
+            accessibilityLabel="Edit profile"
+            accessibilityRole="button"
+          >
             <Text style={styles.editBtnText}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
@@ -88,14 +91,14 @@ export default function ProfileScreen() {
         {/* System & Authentication */}
         <Text className="text-text-muted text-xs font-semibold ml-5 mb-2 tracking-widest uppercase">System</Text>
         <View className="mx-4 bg-bg-card rounded-2xl mb-4 border border-border overflow-hidden">
-          <TouchableOpacity className="flex-row items-center px-4 py-4 border-b border-border" onPress={() => (navigation.navigate as any)('Settings')}>
+          <TouchableOpacity className="flex-row items-center px-4 py-4 border-b border-border" onPress={() => (navigation.navigate as any)('Settings')} accessibilityLabel="App settings" accessibilityRole="button">
             <View style={styles.iconWrap}>
               <Settings color="#6C63FF" size={16} />
             </View>
             <Text className="flex-1 text-text-1 text-base font-semibold ml-3">App Settings</Text>
             <ChevronRight color="#6B6890" size={18} />
           </TouchableOpacity>
-          <TouchableOpacity className="flex-row items-center px-4 py-4" onPress={logout}>
+          <TouchableOpacity className="flex-row items-center px-4 py-4" onPress={logout} accessibilityLabel="Sign out" accessibilityRole="button">
             <View style={[styles.iconWrap, { backgroundColor: 'rgba(239,68,68,0.12)' }]}>
               <LogOut color="#EF4444" size={16} />
             </View>
@@ -103,7 +106,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text className="text-center text-text-muted text-xs pb-10 mt-2">PayBackPal v3.1</Text>
+        <Text className="text-center text-text-muted text-xs pb-10 mt-2">PayBackPal v3.2</Text>
       </ScrollView>
     </SafeAreaView>
   );

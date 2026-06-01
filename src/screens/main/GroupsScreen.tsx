@@ -12,7 +12,7 @@ type Nav = NativeStackNavigationProp<MainStackParamList>;
 
 export default function GroupsScreen() {
   const navigation = useNavigation<Nav>();
-  const { groups, joinGroup, syncAll, isSyncing } = useApp();
+  const { groups, expenses, joinGroup, syncAll, isSyncing, fmt } = useApp();
   const { user } = useAuth();
   const { openCreateGroup } = useModal();
 
@@ -51,10 +51,10 @@ export default function GroupsScreen() {
       <View className="flex-row justify-between items-center p-4 pb-2" style={{ paddingTop: Platform.OS === 'android' ? 44 : 16 }}>
         <Text className="text-text-1 text-[22px] font-extrabold">Groups</Text>
         <View className="flex-row gap-2">
-          <TouchableOpacity className="bg-bg-card border border-primary rounded-[10px] px-[14px] py-2" onPress={() => setJoinModalOpen(true)}>
+          <TouchableOpacity className="bg-bg-card border border-primary rounded-[10px] px-[14px] py-2" onPress={() => setJoinModalOpen(true)} accessibilityLabel="Join existing group" accessibilityRole="button">
             <Text className="text-primary font-bold text-sm">Join</Text>
           </TouchableOpacity>
-          <TouchableOpacity className="bg-primary rounded-[10px] px-[14px] py-2" onPress={openCreateGroup}>
+          <TouchableOpacity className="bg-primary rounded-[10px] px-[14px] py-2" onPress={openCreateGroup} accessibilityLabel="Create new group" accessibilityRole="button">
             <Text className="text-white font-bold text-sm">+ New</Text>
           </TouchableOpacity>
         </View>
@@ -92,6 +92,7 @@ export default function GroupsScreen() {
           className="flex-1 text-text-1 text-sm py-3"
           value={search} onChangeText={setSearch}
           placeholder="Search groups…" placeholderTextColor="#6B6890"
+          accessibilityLabel="Search groups"
         />
       </View>
 
@@ -136,11 +137,15 @@ export default function GroupsScreen() {
             ))}
           </>
         ) : null}
-        renderItem={({ item }) => (
+        renderItem={({ item }) => {
+          const groupTotal = expenses.filter(e => e.groupId === item.id && !e.isSettlement).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+          return (
           <TouchableOpacity
-            className="bg-bg-card rounded-[14px] p-[14px] flex-row items-center mb-2.5 border border-border"
-            onPress={() => navigation.navigate('GroupDetails', { groupId: item.id })}>
-            <View className="w-10 h-10 bg-primary/20 rounded-lg justify-center items-center overflow-hidden mr-3">
+            className="bg-bg-card rounded-[16px] p-[14px] flex-row items-center mb-2.5 border border-border"
+            onPress={() => navigation.navigate('GroupDetails', { groupId: item.id })}
+            activeOpacity={0.8}
+          >
+            <View className="w-11 h-11 bg-primary/20 rounded-[14px] justify-center items-center overflow-hidden mr-3">
               {item.iconType === 'image' && item.icon && item.icon.length > 5 ? (
                 <Image source={{ uri: item.icon }} style={{ width: '100%', height: '100%' }} />
               ) : (
@@ -150,15 +155,18 @@ export default function GroupsScreen() {
             <View className="flex-1">
               <Text className="text-text-1 text-[15px] font-bold">{item.name}</Text>
               <Text className="text-text-muted text-xs mt-0.5">
-                {item.members.length} member{item.members.length !== 1 ? 's' : ''}
+                {item.members.length} member{item.members.length !== 1 ? 's' : ''} · {fmt(groupTotal)}
               </Text>
               {item.description ? (
                 <Text className="text-text-2 text-xs mt-0.5">{item.description}</Text>
               ) : null}
             </View>
-            <Text className="text-text-muted text-[22px]">›</Text>
+            <View style={{ backgroundColor: 'rgba(108,99,255,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+              <Text style={{ color: '#6C63FF', fontSize: 16, fontWeight: '700' }}>›</Text>
+            </View>
           </TouchableOpacity>
-        )}
+          );
+        }}
       />
     </SafeAreaView>
   );

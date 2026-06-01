@@ -34,6 +34,8 @@ export interface Expense {
   category: string;
   paidBy: string;
   splitAmong: string[];
+  splitType?: 'equal' | 'percentage' | 'exact';
+  splits?: { memberId: string; amount: number }[];
   date: string;
   receipt?: string;
   group?: string;
@@ -50,6 +52,22 @@ export interface Expense {
     text: string;
     timestamp: string;
   }[];
+}
+
+export interface PersonalTransaction {
+  id: string;
+  type: 'income' | 'expense';
+  amount: number;
+  description: string;
+  category: string;
+  date: string;
+  isRecurring?: boolean;
+  recurringDay?: number | null;
+}
+
+export interface Budget {
+  id: string;
+  monthlyLimit: number;
 }
 
 export interface Notification {

@@ -7,6 +7,7 @@ import GroupDetailsScreen  from '../screens/sub/GroupDetailsScreen';
 import ReceiptStorageScreen from '../screens/sub/ReceiptStorageScreen';
 import ReportsScreen        from '../screens/sub/ReportsScreen';
 import SettingsScreen       from '../screens/main/SettingsScreen';
+import NotificationsScreen  from '../screens/main/NotificationsScreen';
 import ChangePasswordScreen from '../screens/auth/ChangePasswordScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -19,6 +20,7 @@ export default function MainNavigator() {
       <Stack.Screen name="ReceiptStorage" component={ReceiptStorageScreen} />
       <Stack.Screen name="Reports"        component={ReportsScreen} />
       <Stack.Screen name="Settings"       component={SettingsScreen} />
+      <Stack.Screen name="Notifications"  component={NotificationsScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
     </Stack.Navigator>
   );
